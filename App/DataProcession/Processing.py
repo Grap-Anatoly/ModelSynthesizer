@@ -84,17 +84,24 @@ def splitAudioFile(file_name, chunkLength, savePath, pBar, consoleOutput):
 def processAudio(file_name, rangeStart, rangeEnd, pos, allyPointer, worksheetAmp, worksheetPh, consoleOutput):
 
     # reading file
-    sampFreq, sound = wavfile.read(file_name)
-    # convert our sound (numpy) array to floating point values ranging from -1 to 1
-    sound = sound / 2.0 ** 15
+    # sampFreq, sound = wavfile.read(file_name)
+    # # convert our sound (numpy) array to floating point values ranging from -1 to 1
+    # sound = sound / 2.0 ** 15
+    #
+    # # Check for 2 or 1 channels
+    # temp = sound[0]
+    # print(type(temp))
+    # if isinstance(temp, np.ndarray):
+    #     signal = sound[:, 0]
+    # else:
+    #     signal = sound
 
-    # Check for 2 or 1 channels
-    temp = sound[0]
-    print(type(temp))
-    if isinstance(temp, np.ndarray):
-        signal = sound[:, 0]
-    else:
-        signal = sound
+    signal, sampFreq = librosa.load(
+        file_name,
+        sr=None,
+        mono=True
+    )
+    consoleOutput.insertPlainText(f"Файл: {file_name}\n")
 
     # Signal lenght
     length_in_s = signal.shape[0] / sampFreq
@@ -148,17 +155,17 @@ def processAudio(file_name, rangeStart, rangeEnd, pos, allyPointer, worksheetAmp
                     dataDict[key] = format(f) # Амплітуда
                     phaseDict[key] = format(phase[i])  # Фаза
 
-            consoleOutput.insertPlainText(
-                "frequency = {} Hz with amplitude {} \n".format(np.round(freq[i], 1), format(f)))
-            consoleOutput.insertPlainText(
-                "frequency = {} Hz with phase {} \n".format(np.round(freq[i], 1), phase[i]))
+            # consoleOutput.insertPlainText(
+            #     "frequency = {} Hz with amplitude {} \n".format(np.round(freq[i], 1), format(f)))
+            # consoleOutput.insertPlainText(
+            #     "frequency = {} Hz with phase {} \n".format(np.round(freq[i], 1), phase[i]))
 
             QApplication.processEvents()
             # Auto scroll
             consoleOutput.verticalScrollBar().setValue(consoleOutput.verticalScrollBar().maximum())
 
-            print('frequency = {} Hz with amplitude {} '.format(np.round(freq[i], 1), format(f)))
-            print('frequency = {} Hz with phase {} '.format(np.round(freq[i], 1), phase[i]))
+            # print('frequency = {} Hz with amplitude {} '.format(np.round(freq[i], 1), format(f)))
+            # print('frequency = {} Hz with phase {} '.format(np.round(freq[i], 1), phase[i]))
 
     """Add additional sound data"""
 

@@ -557,7 +557,7 @@ class AISynthesisWindow(QMainWindow):
     def get_models_result(self, countSet, resultSet):
         for i in range(len(countSet)):
             # print("%sGuess accuracy: %s; " % (count[i], resultSet[i]))
-            self.consoleOutput.insertPlainText(f"{countSet[i]} Guess accuracy: {resultSet[i]}; ")
+            self.consoleOutput.insertPlainText(f"{countSet[i]}")
 
     def print_progress(self, string):
         if string in self.consoleOutput.toPlainText():

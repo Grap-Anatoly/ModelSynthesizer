@@ -21,7 +21,7 @@ from openpyxl import load_workbook
 
 def loadData():
     # CONFIG
-    DATA_PATH = "D:/PythonProjects/MagRobota/data/AudioMNIST-master/AudioMNIST-master/data"
+    DATA_PATH = "D:/PythonProjects/MagRobotaData/data/AudioMNIST-master/AudioMNIST-master/data"
     SAMPLE_RATE = 16000
     N_MFCC = 20
     MAX_LEN = 32  # number of time frames for padding
@@ -95,12 +95,12 @@ def loadData():
     print("X_test:", X_test.shape)
 
     # Save numerical version
-    os.makedirs("processed_dataset", exist_ok=True)
+    os.makedirs("D:/PythonProjects/MagRobotaData/processed_dataset", exist_ok=True)
 
-    np.save("processed_dataset/X_train.npy", X_train)
-    np.save("processed_dataset/X_test.npy", X_test)
-    np.save("processed_dataset/y_train.npy", y_train)
-    np.save("processed_dataset/y_test.npy", y_test)
+    np.save("D:/PythonProjects/MagRobotaData/processed_dataset/X_train.npy", X_train)
+    np.save("D:/PythonProjects/MagRobotaData/processed_dataset/X_test.npy", X_test)
+    np.save("D:/PythonProjects/MagRobotaData/processed_dataset/y_train.npy", y_train)
+    np.save("D:/PythonProjects/MagRobotaData/processed_dataset/y_test.npy", y_test)
 
     print("Saved processed dataset!")
 
@@ -124,12 +124,12 @@ def csvToExcel(path, name):
 
 # data = loadData()
 
-MNIST_X_train = np.load("processed_dataset/X_train.npy")
-MNIST_y_train = np.load("processed_dataset/y_train.npy")
-MNIST_X_test = np.load("processed_dataset/X_test.npy")
-MNIST_y_test = np.load("processed_dataset/y_test.npy")
+MNIST_X_train = np.load("D:/PythonProjects/MagRobotaData/processed_dataset/X_train.npy")
+MNIST_y_train = np.load("D:/PythonProjects/MagRobotaData/processed_dataset/y_train.npy")
+MNIST_X_test = np.load("D:/PythonProjects/MagRobotaData/processed_dataset/X_test.npy")
+MNIST_y_test = np.load("D:/PythonProjects/MagRobotaData/processed_dataset/y_test.npy")
 # Load the workbook and select the active sheet
-wb = load_workbook("D:/PythonProjects/MagRobota/data/TestingDump/Test/08.25/Set/20.08_Set.xlsx")  # Replace with your file path
+wb = load_workbook("D:/PythonProjects/MagRobotaData/data/TestingDump/Test/08.25/Set/20.08_Set.xlsx")  # Replace with your file path
 ws = wb.active  # Or wb['SheetName'] if you know the sheet name
 
 # Read all data into a list of lists
@@ -157,7 +157,7 @@ if __name__ == '__main__':
     """
     MNIST
     """
-    runsNumber = 15
+    runsNumber = 1
     def mnistConv(X_train, y_train, X_test, y_test):
         model = tf.keras.models.Sequential([
             tf.keras.layers.Input(shape=(20, 32, 1)),
@@ -201,7 +201,7 @@ if __name__ == '__main__':
                     matchNumber += 1
 
             if (matchNumber / N) * 100 > 80:
-                model.save(f"D:/PythonProjects/MagRobota/Stattya_SavedModelsForTesting/MNIST_Conv/Model_acc({(matchNumber / N) * 100}),{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
+                model.save(f"D:/PythonProjects/MagRobotaData/Stattya_SavedModelsForTesting/MNIST_Conv/Model_acc({(matchNumber / N) * 100}),{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
 
     def mnistDense(X_train, y_train, X_test, y_test):
         X_train_dense = X_train.reshape(-1, 20 * 32)
@@ -242,7 +242,7 @@ if __name__ == '__main__':
 
             if (matchNumber / N) * 100 > 80:
                 model.save(
-                    f"D:/PythonProjects/MagRobota/Stattya_SavedModelsForTesting/MNIST_Dense/Model_acc({(matchNumber / N) * 100}),{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
+                    f"D:/PythonProjects/MagRobotaData/Stattya_SavedModelsForTesting/MNIST_Dense/Model_acc({(matchNumber / N) * 100}),{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
 
 
     def mnistLSTM(X_train, y_train, X_test, y_test):
@@ -286,7 +286,7 @@ if __name__ == '__main__':
 
             if (matchNumber / N) * 100 > 80:
                 model.save(
-                    f"D:/PythonProjects/MagRobota/Stattya_SavedModelsForTesting/MNIST_LSTM/Model_acc({(matchNumber / N) * 100}),{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
+                    f"D:/PythonProjects/MagRobotaData/Stattya_SavedModelsForTesting/MNIST_LSTM/Model_acc({(matchNumber / N) * 100}),{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
 
 
     print("MNIST")
@@ -297,1164 +297,503 @@ if __name__ == '__main__':
     print("LSTM 20 Steps !!!!!!!!")
     mnistLSTM(MNIST_X_train, MNIST_y_train, MNIST_X_test, MNIST_y_test)
     print("over")
-    """
-    Dense Mlp +-
-    """
-
-    # Simulated input data
-    input_dim = len(x_data[0])
-
-    # X = np.random.rand(num_samples, input_dim).astype(np.float32)
-    # y = np.random.randint(0, 2, size=(num_samples, 1)).astype(np.float32)
-
-    X = np.array(x_data)
-    y = np.array(y_data)
-
-    # Split into train and test sets (80/20)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    def build_mlp_model(input_dim):
-        inputs = tf.keras.Input(shape=(input_dim,))
-        x = tf.keras.layers.Dense(256, activation='relu')(inputs)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dense(128, activation='relu')(x)
-        x = tf.keras.layers.Dropout(0.3)(x)
-        x = tf.keras.layers.Dense(64, activation='relu')(x)
-        outputs = tf.keras.layers.Dense(1, activation='sigmoid')(x)
-        return tf.keras.Model(inputs, outputs)
-
-    empty_df = pd.DataFrame()
-    empty_df.to_excel("mlp_results.xlsx", index=False, header=False)
-
-    numberOftests = 25
-
-    for t in range(1, numberOftests+1):
-
-        mlpModel = build_mlp_model(input_dim)
-
-        mlpModel.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-        history = mlpModel.fit(X_train, y_train, batch_size=32, epochs=20, validation_split=0.2)
-
-        # Evaluate on test set
-        test_loss, test_acc = mlpModel.evaluate(X_test, y_test)
-
-        print(f"\nTraining accuracy: {history.history['accuracy'][-1]:.4f}")
-        print(f"\nTraining loss: {history.history['loss'][-1]:.4f}")
-        print(f"\nTraining val accuracy: {history.history['val_accuracy'][-1]:.4f}")
-
-        print(f"\nTest accuracy: {test_acc:.4f}")
-        print(f"\nTest loss: {test_loss:.4f}")
-
-        # Detailed classification report
-        y_pred = mlpModel.predict(X_test)
-        y_pred_classes = (y_pred > 0.5).astype(int)
-
-        matchNumber = 0
-        for i in range(len(y_test)):
-            # print(f"{y_test[i]} - {y_pred_classes[i]}")
-            if y_test[i] == y_pred_classes[i][0]:
-                matchNumber += 1
-        # print(classification_report(y_test, y_pred_classes))
-
-        print(f"Matches: {matchNumber} of {len(y_test)} is true. Percentage Accuracy: {(matchNumber / len(y_test)) * 100}")
-
-        if (matchNumber / len(y_test)) * 100 > 80:
-            mlpModel.save(f"D:/PythonProjects/MagRobota/Stattya_SavedModelsForTesting/Mlp/Model_acc({(matchNumber / len(y_test)) * 100}),{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
-
-        results = pd.DataFrame([{
-            "Run": t,
-            "Train Accuracy": history.history['accuracy'][-1],
-            "Train Loss": history.history['loss'][-1],
-            "Val Accuracy": history.history['val_accuracy'][-1],
-            "Test Accuracy": test_acc,
-            "Test Loss": test_loss,
-            f"Test matches of {len(y_test)}": matchNumber,
-            "Test prediction matches %": (matchNumber / len(y_test)) * 100
-        }])
-
-        # ==== Save or append to Excel ====
-        results_df = pd.DataFrame(results)
-
-        excel_file = "mlp_results.xlsx"
-
-
-        try:
-            # Append if file exists
-            existing = pd.read_excel(excel_file)
-            results_df = pd.concat([existing, results_df], ignore_index=True)
-        except FileNotFoundError:
-            # Create new if it doesn’t exist
-            pass
-
-        results_df.to_excel(excel_file, index=False)
-        print(f"Results saved to {excel_file}")
-
-    # -----------------------------------------------------------\
 
     """
-    Convolutional
+    
+    CUSTOM DATA ___________________________________________________________________
+    
     """
 
-    # Load the workbook and select the active sheet
-    wb = load_workbook(
-        "D:/PythonProjects/MagRobota/data/TestingDump/Test/08.25/Set/20.08_SetCombined.xlsx")  # Replace with your file path
-    ws = wb.active  # Or wb['SheetName'] if you know the sheet name
-
-    # Read all data into a list of lists
-    data = []
-    for row in ws.iter_rows(values_only=True):
-        # data.append(list(row[1:])) # - Full list
-        # data.append(list(row[1:-1])) # - Timbre -1, (3)
-        # data.append(list(row[1:-2]))  # - Timbre -2, (2)
-        # data.append(list(row[1:-3]))  # - Timbre -3, (1)
-        # data.append(list(row[1:-4]))  # - Pitch
-        data.append(list(row[1:-5]))  # - Amp only
-
-    data = data[1:]
-
-    x_data = []
-    y_data = []
-
-    for i in data:
-        y_data.append(i[0])
-        x_data.append(i[1:])
-
-    # 3. Normalize features
-    scaler = StandardScaler()
-    X_norm = scaler.fit_transform(x_data)
-
-    # 4. Reshape for CNN: (samples, height=num_frequencies, width=num_features, channels=1)
-    # If each sample has N features (num_columns), treat it as height=N, width=1
-    X_cnn = X_norm.reshape(X_norm.shape[0], X_norm.shape[1], 1, 1)
-
-    # 5. One-hot encode labels
-    y_cat = to_categorical(y_data, num_classes=2)  # adjust num_classes if needed
-
-    # 6. Train/test split
-    X_train, X_test, y_train, y_test = train_test_split(X_cnn, y_cat, test_size=0.2, random_state=42, stratify=y)
-
-    empty_df = pd.DataFrame()
-    empty_df.to_excel("conv_results.xlsx", index=False, header=False)
-
-    for t in range(1, numberOftests+1):
-
-        convModel = Sequential([
-            Conv2D(16, (3, 1), activation='relu', padding='same', input_shape=(X_cnn.shape[1], 1, 1)),
-            MaxPooling2D((2, 1)),
-            Dropout(0.3),
-
-            Conv2D(32, (3, 1), activation='relu', padding='same'),
-            MaxPooling2D((2, 1)),
-            Dropout(0.3),
-
-            Flatten(),
-            Dense(64, activation='relu'),
-            Dropout(0.4),
-            Dense(2, activation='softmax')
-        ])
-
-        convModel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-        convModel.summary()
-
-        # 8. Train
-        history = convModel.fit(X_train, y_train, validation_split=0.2, epochs=30, batch_size=32)
-
-        # 9. Evaluate
-        test_loss, test_acc = convModel.evaluate(X_test, y_test)
-        print(f"Test Accuracy: {test_acc:.4f}")
-        # Predictions
-        y_pred = convModel.predict(X_test)
-        y_pred_classes = (y_pred > 0.5).astype(int)
-
-        for i in range(len(y_pred)):
-            print(f"{y_pred[i]} - {y_test[i]}")
-
-        test_loss, test_acc = convModel.evaluate(X_test, y_test)
-        print(f"Test Accuracy: {test_acc:.4f}")
-
-        # 10. Predictions
-        y_pred_probs = convModel.predict(X_test)  # Probabilities
-        y_pred = np.argmax(y_pred_probs, axis=1)  # Predicted classes
-        y_true = np.argmax(y_test, axis=1)  # True classes
-
-        # Show first 20 predictions vs real values
-        pred_number = 23
-        matchNumber = 0
-        for i in range(pred_number):
-            print(f"Sample {i}: Predicted={y_pred[i]}, Real={y_true[i]}")
-            if y_pred[i] == y_true[i]:
-                matchNumber += 1
-        print(f"Prediction Accuracy: {matchNumber} of {pred_number} is true. Percentage Accuracy: {(matchNumber/pred_number) * 100}")
-
-        if (matchNumber/pred_number) * 100 > 80:
-            convModel.save(f"D:/PythonProjects/MagRobota/Stattya_SavedModelsForTesting/Convolutional//Model_acc({(matchNumber/pred_number) * 100}), {datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
-
-        results = pd.DataFrame([{
-            "Run": t,
-            "Train Accuracy": history.history['accuracy'][-1],
-            "Train Loss": history.history['loss'][-1],
-            "Val Accuracy": history.history['val_accuracy'][-1],
-            "Test Accuracy": test_acc,
-            "Test Loss": test_loss,
-            f"Test matches of {pred_number}": matchNumber,
-            "Test prediction matches %": (matchNumber / pred_number) * 100
-        }])
-
-        # ==== Save or append to Excel ====
-        results_df = pd.DataFrame(results)
-
-        excel_file = "conv_results.xlsx"
-
-        try:
-            # Append if file exists
-            existing = pd.read_excel(excel_file)
-            results_df = pd.concat([existing, results_df], ignore_index=True)
-        except FileNotFoundError:
-            # Create new if it doesn’t exist
-            pass
-
-        results_df.to_excel(excel_file, index=False)
-        print(f"Results saved to {excel_file}")
-
-    # -------------------------------------------------------------
-
-    """
-    LSTM via 2D, excluding timestamps
-    """
-
-    wb = load_workbook("D:/PythonProjects/MagRobota/data/TestingDump/Test/08.25/Set/20.08_SetCombined.xlsx")
-    ws = wb.active
-
-    data = []
-    for row in ws.iter_rows(values_only=True):
-        # data.append(list(row[1:])) # - Full list
-        # data.append(list(row[1:-1])) # - Timbre -1, (3)
-        # data.append(list(row[1:-2]))  # - Timbre -2, (2)
-        # data.append(list(row[1:-3]))  # - Timbre -3, (1)
-        # data.append(list(row[1:-4]))  # - Pitch
-        data.append(list(row[1:-5]))  # - Amp only
-
-    data = data[1:]  # skip header
-
-    x_data = []
-    y_data = []
-
-    for row in data:
-        y_data.append(row[0])  # label in column B
-        x_data.append(row[1:])  # all numeric features
-
-    x_data = np.array(x_data, dtype=float)
-    y_data = np.array(y_data, dtype=int)
-
-    # 2. Normalize features
-    scaler = StandardScaler()
-    X_norm = scaler.fit_transform(x_data)
-
-    # 3. Reshape for LSTM: (samples, timesteps, features)
-    # Here timesteps = number of feature columns, features = 1
-    X_lstm = X_norm.reshape(X_norm.shape[0], X_norm.shape[1], 1)
-
-    # 4. One-hot encode labels
-    y_cat = to_categorical(y_data, num_classes=2)
-
-    # 5. Train/test split
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_lstm, y_cat, test_size=0.2, random_state=42, stratify=y_data
-    )
-
-    print(f"Train shape: {X_train.shape}, Test shape: {X_test.shape}")
-
-    # 6. LSTM Model
-
-    empty_df = pd.DataFrame()
-    empty_df.to_excel("lstm2D_results.xlsx", index=False, header=False)
-
-    for t in range(1, numberOftests + 1):
-
-        lstm2DModel = Sequential([
-            LSTM(64, input_shape=(X_lstm.shape[1], 1), return_sequences=True),
-            Dropout(0.3),
-            LSTM(32),
-            Dropout(0.3),
-            Dense(64, activation='relu'),
-            Dropout(0.4),
-            Dense(2, activation='softmax')
-        ])
-
-        lstm2DModel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-        lstm2DModel.summary()
-
-        # 7. Train
-        history = lstm2DModel.fit(X_train, y_train, validation_split=0.2, epochs=30, batch_size=32)
-
-        # 8. Evaluate
-        test_loss, test_acc = lstm2DModel.evaluate(X_test, y_test)
-        print(f"\nTest Accuracy: {test_acc * 100:.2f}%")
-
-        # 9. Predictions
-        y_pred_probs = lstm2DModel.predict(X_test)
-        y_pred = np.argmax(y_pred_probs, axis=1)
-        y_true = np.argmax(y_test, axis=1)
-
-        pred_number = 23
-        matchNumber = 0
-        for i in range(pred_number):
-            print(f"Sample {i}: Predicted={y_pred[i]}, Real={y_true[i]}")
-            if y_pred[i] == y_true[i]:
-                matchNumber += 1
-        print(
-            f"Prediction Accuracy: {matchNumber} of {pred_number} is true. Percentage Accuracy: {(matchNumber / pred_number) * 100}")
-
-        if (matchNumber/pred_number) * 100 > 80:
-            lstm2DModel.save(f"D:/PythonProjects/MagRobota/Stattya_SavedModelsForTesting/LSTM2/Model_acc({(matchNumber / pred_number) * 100}), {datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
-
-        results = pd.DataFrame([{
-            "Run": t,
-            "Train Accuracy": history.history['accuracy'][-1],
-            "Train Loss": history.history['loss'][-1],
-            "Val Accuracy": history.history['val_accuracy'][-1],
-            "Test Accuracy": test_acc,
-            "Test Loss": test_loss,
-            f"Test matches of {pred_number}": matchNumber,
-            "Test prediction matches %": (matchNumber / pred_number) * 100
-        }])
-
-        # ==== Save or append to Excel ====
-        results_df = pd.DataFrame(results)
-
-        excel_file = "lstm2D_results.xlsx"
-
-        try:
-            # Append if file exists
-            existing = pd.read_excel(excel_file)
-            results_df = pd.concat([existing, results_df], ignore_index=True)
-        except FileNotFoundError:
-            # Create new if it doesn’t exist
-            pass
-
-        results_df.to_excel(excel_file, index=False)
-        print(f"Results saved to {excel_file}")
-
-# -----------------------------------------------------------------------------
-
-# -----------------------------------------------------------------------------
-
-    """
-    LSTM - Via sequences
-    """
-
-    # Load the workbook and select the active sheet
-    wb = load_workbook("D:/PythonProjects/MagRobota/data/TestingDump/Test/08.25/Set/20.08_SetCombined.xlsx")
-    ws = wb.active
-
-    data = []
-    for row in ws.iter_rows(values_only=True):
-        data.append(list(row))
-
-    data = data[1:]
-
-    file_ids = [row[0] for row in data]  # col A
-    y_data = [row[1] for row in data]  # col B
-    # x_data = [row[2:] for row in data]  # cols C..end
-    # x_data = [row[2:-1] for row in data]
-    # x_data = [row[2:-2] for row in data]
-    # x_data = [row[2:-3] for row in data]
-    # x_data = [row[2:-4] for row in data]
-    x_data = [row[2:-5] for row in data]
-
-    # data.append(list(row[1:])) # - Full list
-    # data.append(list(row[1:-1])) # - Timbre -1, (3)
-    # data.append(list(row[1:-2]))  # - Timbre -2, (2)
-    # data.append(list(row[1:-3]))  # - Timbre -3, (1)
-    # data.append(list(row[1:-4]))  # - Pitch
-    # data.append(list(row[1:-5]))  # - Amp only
-
-    x_data = np.array(x_data, dtype=float)
-    y_data = np.array(y_data, dtype=int)
-
-    # Normalize features
-    scaler = StandardScaler()
-    x_data = scaler.fit_transform(x_data)
-
-    def get_base_id(filename):
-        # Example: "file_a_12.wav" → "file_a"
-        return re.sub(r"_\d+\.wav$", "", filename)
-
-    base_ids = [get_base_id(row[0]) for row in data]
-
-    # Parameters
-    SEQ_LEN = 5  # number of timesteps per sequence
-    features = x_data.shape[1]
-
-    X_seq, y_seq = [], []
-
-    unique_files = list(set(base_ids))
-    for f in unique_files:
-        indices = [i for i, fid in enumerate(base_ids) if fid == f]
-        seq_features = x_data[indices]
-        seq_labels = y_data[indices]
-
-        # slice into sequences
-        for i in range(0, len(indices) - SEQ_LEN + 1, SEQ_LEN):
-            X_seq.append(seq_features[i:i + SEQ_LEN])
-            y_seq.append(int(np.round(np.mean(seq_labels[i:i + SEQ_LEN]))))
-
-    X_seq = np.array(X_seq)
-    y_seq = np.array(y_seq)
-
-    print("Final shape:", X_seq.shape, y_seq.shape)  # (num_sequences, SEQ_LEN, features)
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_seq, y_seq, test_size=0.2, random_state=42, stratify=y_seq
-    )
-
-    y_train = to_categorical(y_train, num_classes=2)
-    y_test = to_categorical(y_test, num_classes=2)
-
-    print("Train:", X_train.shape, y_train.shape)
-    print("Test:", X_test.shape, y_test.shape)
-
-    empty_df = pd.DataFrame()
-    empty_df.to_excel("lstm3D_results.xlsx", index=False, header=False)
-
-    for t in range(1, numberOftests + 1):
-
-        lstm3Dmodel = Sequential([
-            LSTM(128, input_shape=(X_seq.shape[1], X_seq.shape[2]), return_sequences=True),
-            Dropout(0.3),
-            LSTM(64),
-            Dropout(0.3),
-            Dense(64, activation='relu'),
-            Dropout(0.4),
-            Dense(2, activation='softmax')
-        ])
-
-        lstm3Dmodel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-        lstm3Dmodel.summary()
-
-        history = lstm3Dmodel.fit(
-            X_train, y_train,
-            validation_split=0.2,
-            epochs=30,
-            batch_size=8,
-            verbose=1
-        )
-
-        test_loss, test_acc = lstm3Dmodel.evaluate(X_test, y_test)
-        print(f"\nTest Accuracy: {test_acc * 100:.2f}%")
-
-        # Predictions
-        y_pred_probs = lstm3Dmodel.predict(X_test)
-        y_pred = np.argmax(y_pred_probs, axis=1)
-        y_true = np.argmax(y_test, axis=1)
-        # y_true = np.argmax(y_test)
-
-        print(y_pred)
-        print(y_true)
-        matchNumber = 0
-        for i in range(len(y_true)):
-            if y_pred[i] == y_true[i]:
-                matchNumber += 1
-            print(f"Seq {i}: Pred={y_pred[i]} ({y_pred_probs[i][y_pred[i]] * 100:.1f}%) | Real={y_true[i]}")
-
-        if test_acc * 100 > 50:
-            lstm3Dmodel.save(f"D:/PythonProjects/MagRobota/Stattya_SavedModelsForTesting/LSTM3/Model_acc({test_acc * 100}), {datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
-
-        results = pd.DataFrame([{
-            "Run": t,
-            "Train Accuracy": history.history['accuracy'][-1],
-            "Train Loss": history.history['loss'][-1],
-            "Val Accuracy": history.history['val_accuracy'][-1],
-            "Test Accuracy": test_acc,
-            "Test Loss": test_loss,
-            f"Test matches of {len(y_pred)}": matchNumber,
-            "Test prediction matches %": (matchNumber / len(y_true)) * 100
-        }])
-
-        # ==== Save or append to Excel ====
-        results_df = pd.DataFrame(results)
-
-        excel_file = "lstm3D_results.xlsx"
-
-        try:
-            # Append if file exists
-            existing = pd.read_excel(excel_file)
-            results_df = pd.concat([existing, results_df], ignore_index=True)
-        except FileNotFoundError:
-            # Create new if it doesn’t exist
-            pass
-
-        results_df.to_excel(excel_file, index=False)
-        print(f"Results saved to {excel_file}")
-
-
-
-    # -------------------------------------------------------------------------
-    # # Read all data into a list of lists
-    # data = []
-    # for row in ws.iter_rows(values_only=True):
-    #     data.append(list(row[0:]))
-    #
-    # data = data[1:]
-    #
-    # x_data = []
-    # y_data = []
-    # temp = []
-    #
-    # X_grouped = collections.defaultdict(list)
-    # Y_grouped = {}
-    #
-    # for i in data:
-    #     name = i[0].rsplit("_", 1)[0]
-    #     features = i[1:]
-    #     Y_grouped[name] = features[0]
-    #     X_grouped[name].append(features[1:])
-    #
-    #
-    # Y_grouped = numpy.array([v for v in Y_grouped.values()])
-    # print(Y_grouped)
-    #
-    # names = []
-    # records = []
-    # for base_name, items in X_grouped.items():
-    #     names.append(base_name)
-    #     feats_list = [features for features in items]
-    #     records.append(np.array(feats_list))
-    #
-    # # Pad sequences to same length
-    #
-    # X = tf.keras.preprocessing.sequence.pad_sequences(records, padding='post', dtype='float32', value=0.0)
-    #
-    # print("Names:", names)
-    # print("3D array shape:", X.shape)
-    #
-    # # X_seq = np.random.rand(num_samples, time_steps, feature_dim).astype(np.float32)
-    # # y_seq = np.random.randint(0, 2, size=(num_samples, 1)).astype(np.float32)
-    #
-    # X_train_seq, X_test_seq, y_train_seq, y_test_seq = train_test_split(X, Y_grouped, test_size=0.2, random_state=42)
-    # '''
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # '''
-    # # Need to reshape
-    # # x_train = numpy.reshape(trainFeatures, (trainFeatures.shape[0], trainFeatures.shape[1],1))
-    # # So i would have  [number of different records, number of samples per record, number of params per sample]
-    #
-    # print(X_train_seq.shape)
-    # print(y_train_seq.shape)
-    # def build_lstm_model(input_shape):
-    #     inputs = tf.keras.Input(shape=input_shape)
-    #     x = tf.keras.layers.Masking(mask_value=0.0)(inputs)
-    #     x = tf.keras.layers.LSTM(128, return_sequences=True)(x)
-    #     x = tf.keras.layers.LSTM(64)(x)
-    #     x = tf.keras.layers.Dense(32, activation='relu')(x)
-    #     outputs = tf.keras.layers.Dense(1, activation='sigmoid')(x)
-    #
-    #     return tf.keras.Model(inputs, outputs)
-    #
-    # lstm_model = build_lstm_model((X_train_seq.shape[1], X_train_seq.shape[2]))
-    #
-    # lstm_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    # lstm_model.fit(X_train_seq, y_train_seq, batch_size=4, epochs=20)
-    #
-    # # Evaluate on test set
-    # test_loss, test_acc = lstm_model.evaluate(X_test_seq, y_test_seq)
-    # print(f"\nTest accuracy: {test_acc:.4f}")
-    #
-    # # Predictions
-    # y_pred_seq = lstm_model.predict(X_test_seq)
-    # y_pred_classes_seq = (y_pred_seq > 0.5).astype(int)
-    # for i in range(len(y_test_seq)):
-    #     print(f"{y_test_seq[i]} - {y_pred_classes_seq[i]}")
-    #
-    # print(classification_report(y_test_seq, y_pred_classes_seq))
-
-
-#  Threads -----------------------------------------------------------------
-
-from PyQt5 import QtCore, QtGui, QtWidgets
-
-import time
-import traceback, sys
-
-
-# class WorkerSignals(QtCore.QObject):
-#     finished = QtCore.pyqtSignal()
-#     error = QtCore.pyqtSignal(tuple)
-#     result = QtCore.pyqtSignal(object)
-#     progress = QtCore.pyqtSignal(str)
+#     """
+#     Dense Mlp +-
+#     """
+#
+#     # Simulated input data
+#     input_dim = len(x_data[0])
+#
+#     # X = np.random.rand(num_samples, input_dim).astype(np.float32)
+#     # y = np.random.randint(0, 2, size=(num_samples, 1)).astype(np.float32)
+#
+#     X = np.array(x_data)
+#     y = np.array(y_data)
+#
+#     # Split into train and test sets (80/20)
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+#
+#     def build_mlp_model(input_dim):
+#         inputs = tf.keras.Input(shape=(input_dim,))
+#         x = tf.keras.layers.Dense(256, activation='relu')(inputs)
+#         x = tf.keras.layers.BatchNormalization()(x)
+#         x = tf.keras.layers.Dense(128, activation='relu')(x)
+#         x = tf.keras.layers.Dropout(0.3)(x)
+#         x = tf.keras.layers.Dense(64, activation='relu')(x)
+#         outputs = tf.keras.layers.Dense(1, activation='sigmoid')(x)
+#         return tf.keras.Model(inputs, outputs)
+#
+#     empty_df = pd.DataFrame()
+#     empty_df.to_excel("mlp_results.xlsx", index=False, header=False)
+#
+#     numberOftests = 1
+#
+#     for t in range(1, numberOftests+1):
+#
+#         mlpModel = build_mlp_model(input_dim)
+#
+#         mlpModel.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+#         history = mlpModel.fit(X_train, y_train, batch_size=32, epochs=10, validation_split=0.3)
+#
+#         # Evaluate on test set
+#         test_loss, test_acc = mlpModel.evaluate(X_test, y_test)
+#
+#         print(f"\nTraining accuracy: {history.history['accuracy'][-1]:.4f}")
+#         print(f"\nTraining loss: {history.history['loss'][-1]:.4f}")
+#         print(f"\nTraining val accuracy: {history.history['val_accuracy'][-1]:.4f}")
+#
+#         print(f"\nTest accuracy: {test_acc:.4f}")
+#         print(f"\nTest loss: {test_loss:.4f}")
+#
+#         # Detailed classification report
+#         y_pred = mlpModel.predict(X_test)
+#         y_pred_classes = (y_pred > 0.5).astype(int)
+#
+#         matchNumber = 0
+#         for i in range(len(y_test)):
+#             print(f"{y_test[i]} - {y_pred_classes[i]}")
+#             if y_test[i] == y_pred_classes[i][0]:
+#                 matchNumber += 1
+#         # print(classification_report(y_test, y_pred_classes))
+#
+#         print(f"Matches: {matchNumber} of {len(y_test)} is true. Percentage Accuracy: {(matchNumber / len(y_test)) * 100}")
+#
+#         if (matchNumber / len(y_test)) * 100 > 80:
+#             mlpModel.save(f"D:/PythonProjects/MagRobotaData/Stattya_SavedModelsForTesting/Mlp/Model_acc({(matchNumber / len(y_test)) * 100}),{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
+#
+#         results = pd.DataFrame([{
+#             "Run": t,
+#             "Train Accuracy": history.history['accuracy'][-1],
+#             "Train Loss": history.history['loss'][-1],
+#             "Val Accuracy": history.history['val_accuracy'][-1],
+#             "Test Accuracy": test_acc,
+#             "Test Loss": test_loss,
+#             f"Test matches of {len(y_test)}": matchNumber,
+#             "Test prediction matches %": (matchNumber / len(y_test)) * 100
+#         }])
+#
+#         # ==== Save or append to Excel ====
+#         results_df = pd.DataFrame(results)
+#
+#         excel_file = "mlp_results.xlsx"
 #
 #
-# uart_result = ['1', '2', '3', '4', '5', '6']
-#
-# # Running all these methods in parallel
-# @QtCore.pyqtSlot()
-# def run1():
-#     for i in range(50):
-#         print("Job 1")
-#         # signals.progress.emit("Job 1")
-#
-#     return uart_result
-#
-#
-# @QtCore.pyqtSlot()
-# def run2():
-#     for i in range(50):
-#         print("Job 2")
-#         # signals.progress.emit("Job 2")
-#
-#     return uart_result
-#
-#
-# @QtCore.pyqtSlot()
-# def run3():
-#     for i in range(50):
-#         print("Job 3")
-#         # signals.progress.emit("Job 3")
-#
-#     return uart_result
-#
-#
-# @QtCore.pyqtSlot()
-# def run4():
-#     for i in range(50):
-#         print("Job 4")
-#
-#     return uart_result
-#
-#
-# class Worker(QtCore.QRunnable):
-#     def __init__(self, fn, *args, **kwargs):
-#         super(Worker, self).__init__()
-#         self.fn = fn
-#         self.args = args
-#         self.kwargs = kwargs
-#         self.signals = WorkerSignals()
-#
-#     def run(self):
 #         try:
-#             result = self.fn(*self.args, **self.kwargs)
-#         except:
-#             traceback.print_exc()
-#             exctype, value = sys.exc_info()[:2]
-#             self.signals.error.emit((exctype, value, traceback.format_exc()))
-#         else:
-#             self.signals.result.emit(result)  # Return the result of the processing
-#         finally:
-#             self.signals.finished.emit()  # Done
+#             # Append if file exists
+#             existing = pd.read_excel(excel_file)
+#             results_df = pd.concat([existing, results_df], ignore_index=True)
+#         except FileNotFoundError:
+#             # Create new if it doesn’t exist
+#             pass
 #
+#         results_df.to_excel(excel_file, index=False)
+#         print(f"Results saved to {excel_file}")
 #
-# class MainWindow(QtWidgets.QMainWindow):
-#     def __init__(self, *args, **kwargs):
-#         super(MainWindow, self).__init__(*args, **kwargs)
-#         b = QtWidgets.QPushButton("START!")
-#         b.pressed.connect(self.runner)
+#     # -----------------------------------------------------------\
 #
-#         w = QtWidgets.QWidget()
-#         layout = QtWidgets.QVBoxLayout(w)
-#         layout.addWidget(b)
-#         self.setCentralWidget(w)
-#         # auto_update_worker = Worker(self.detect_auto_update_status)  # edit
-#         # QtCore.QThreadPool.globalInstance().start(auto_update_worker)  # edit
+#     """
+#     Convolutional
+#     """
 #
-#     # edit
-#     def detect_auto_update_status(self):
-#         while True:
-#             print('get_auto_update_data_from_server')
-#             time.sleep(2)
+#     # Load the workbook and select the active sheet
+#     wb = load_workbook(
+#         "D:/PythonProjects/MagRobotaData/data/TestingDump/Test/08.25/Set/20.08_SetCombined.xlsx")  # Replace with your file path
+#     ws = wb.active  # Or wb['SheetName'] if you know the sheet name
 #
-#     def print_output(self, uart_list):
-#         print(uart_list)
+#     # Read all data into a list of lists
+#     data = []
+#     for row in ws.iter_rows(values_only=True):
+#         # data.append(list(row[1:])) # - Full list
+#         # data.append(list(row[1:-1])) # - Timbre -1, (3)
+#         # data.append(list(row[1:-2]))  # - Timbre -2, (2)
+#         # data.append(list(row[1:-3]))  # - Timbre -3, (1)
+#         # data.append(list(row[1:-4]))  # - Pitch
+#         data.append(list(row[1:-5]))  # - Amp only
 #
-#     def print_progress(self, string):
-#         print("Triggered")
-#         print(string)
+#     data = data[1:]
 #
-#     def thread_complete(self):
-#         print("THREAD COMPLETE!")
+#     x_data = []
+#     y_data = []
 #
-#     def runner(self):
-#         print("You pressed the Test button")
+#     for i in data:
+#         y_data.append(i[0])
+#         x_data.append(i[1:])
 #
-#         self.runner1()
-#         # self.runner2()
+#     # 3. Normalize features
+#     scaler = StandardScaler()
+#     X_norm = scaler.fit_transform(x_data)
 #
-#     def runner1(self):
-#         thread_pool = QtCore.QThreadPool.globalInstance()
-#         print("Multithreading with maximum %d threads" % thread_pool.maxThreadCount())
-#         t = False
-#         for task in (run1, run2):
-#             worker = Worker(task)
-#             # signals.progress.connect(self.print_progress)
-#             worker.signals.result.connect(self.print_output)
-#             worker.signals.finished.connect(self.thread_complete)
-#             if t == True:
-#                 worker.signals.finished.connect(self.runner2)
-#             thread_pool.start(worker)
-#             t = True
+#     # 4. Reshape for CNN: (samples, height=num_frequencies, width=num_features, channels=1)
+#     # If each sample has N features (num_columns), treat it as height=N, width=1
+#     X_cnn = X_norm.reshape(X_norm.shape[0], X_norm.shape[1], 1, 1)
 #
-#     def runner2(self):
-#         thread_pool = QtCore.QThreadPool.globalInstance()
-#         print("Multithreading with maximum %d threads" % thread_pool.maxThreadCount())
-#         for task in (run3, run4):
-#             worker = Worker(task)
-#             # signals.progress.connect(self.print_progress)
-#             worker.signals.result.connect(self.print_output)
-#             worker.signals.finished.connect(self.thread_complete)
-#             thread_pool.start(worker)
-
-        # if self.thread_complete():
-        #     # Second two model types
-        #     for task in (run3, run4):
-        #         worker = Worker(task)
-        #         # signals.progress.connect(self.print_progress)
-        #         worker.signals.result.connect(self.print_output)
-        #         worker.signals.finished.connect(self.thread_complete)
-        #         thread_pool.start(worker)
-
-
-from PyQt5.QtWidgets import QComboBox, QMainWindow, QApplication, QWidget, QVBoxLayout, QPushButton
-from PyQt5.QtGui import QIcon
-import sys
-
-
-# class MainWindow(QMainWindow):
+#     # 5. One-hot encode labels
+#     y_cat = to_categorical(y_data, num_classes=2)  # adjust num_classes if needed
 #
-#     def __init__(self):
-#         super().__init__()
+#     # 6. Train/test split
+#     X_train, X_test, y_train, y_test = train_test_split(X_cnn, y_cat, test_size=0.3, random_state=42, stratify=y)
 #
-#         self.combobox1 = QComboBox()
-#         self.combobox1.addItems(['One', 'Two', 'Three', 'Four'])
+#     empty_df = pd.DataFrame()
+#     empty_df.to_excel("conv_results.xlsx", index=False, header=False)
 #
-#         layout = QVBoxLayout()
-#         layout.addWidget(self.combobox1)
-#         layout.addWidget(QPushButton("Get value", clicked=self.check_index))
+#     for t in range(1, numberOftests+1):
 #
-#         container = QWidget()
-#         container.setLayout(layout)
+#         convModel = Sequential([
+#             Conv2D(16, (3, 1), activation='relu', padding='same', input_shape=(X_cnn.shape[1], 1, 1)),
+#             MaxPooling2D((2, 1)),
+#             Dropout(0.3),
 #
-#         self.setCentralWidget(container)
+#             Conv2D(32, (3, 1), activation='relu', padding='same'),
+#             MaxPooling2D((2, 1)),
+#             Dropout(0.3),
 #
-#     def current_text_changed(self, s):
-#         print("Current text: ", s)
+#             Flatten(),
+#             Dense(64, activation='relu'),
+#             Dropout(0.4),
+#             Dense(2, activation='softmax')
+#         ])
 #
-#     def check_index(self):
-#         cindex = self.combobox1.currentIndex()
-#         if cindex == 0:
-#             print("Hello")
-#         elif cindex == 1:
-#             print("Hi")
-#         elif cindex == 2:
-#             print("Good morning")
-#         elif cindex == 3:
-#             print("Good day")
-#         else:
-#             print("not viable choice")
-#         print(f"CurrentIndex {cindex}")
+#         convModel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+#         convModel.summary()
 #
-#     def activated(Self, index):
-#         print("Activated index:", index)
+#         # 8. Train
+#         history = convModel.fit(X_train, y_train, validation_split=0.3, epochs=10, batch_size=32)
 #
-#     def text_changed(self, s):
-#         print("Text changed:", s)
+#         # 9. Evaluate
+#         test_loss, test_acc = convModel.evaluate(X_test, y_test)
+#         print(f"Test Accuracy: {test_acc:.4f}")
+#         # Predictions
+#         y_pred = convModel.predict(X_test)
+#         y_pred_classes = (y_pred > 0.5).astype(int)
 #
-#     def index_changed(self, index):
-#         print("Index changed", index)
+#         for i in range(len(y_pred)):
+#             print(f"{y_pred[i]} - {y_test[i]}")
 #
-# if __name__ == '__main__':
-#     import sys
+#         test_loss, test_acc = convModel.evaluate(X_test, y_test)
+#         print(f"Test Accuracy: {test_acc:.4f}")
 #
-#     app = QtWidgets.QApplication(sys.argv)
-#     window = MainWindow()
-#     window.show()
-#     sys.exit(app.exec_())
-
-# Old paralel study ---------------------------------------------------------------------------------------------------
-
- # def studyModelsInitial(self):
-    #     self.consoleOutput.insertPlainText("Іде обробка... \n")
-    #
-    #     saveFilePath = QFileDialog.getExistingDirectory(self, "Оберіть папку для збереження результату")
-    #     filePath = self.rawDataPathLabel.text()
-    #     testFilePath = self.usageDataPathLabel.text()
-    #     modelPBar = self.modelPBar
-    #     consoleOutput = self.consoleOutput
-    #
-    #     if filePath and filePath != "Шлях до файлу з даними для навчання...":
-    #
-    #         xls = pd.ExcelFile(filePath)
-    #         l = len(xls.sheet_names)
-    #
-    #         if l > 1:
-    #
-    #             # Study Features
-    #             ampData_features, ampData_labels, ampData_fileNames, phaseData_features, phaseData_labels, \
-    #             phaseData_fileNames, headers = TensorDataProcessing.getMultipleSheetDataSet(filePath)
-    #
-    #             # Test Features
-    #             ampData_testFeatures, ampData_testLabels, ampData_fileNames, phaseData_testFeatures, \
-    #             phaseData_testLabels, phaseData_fileNames, test_headers = TensorDataProcessing.getMultipleSheetDataSet(
-    #                 testFilePath)
-    #
-    #             res = []
-    #
-    #             def firstTypeStudy():
-    #
-    #                 print("Process 1 starting")
-    #                 count, resultSet = Models.studyFirstTypeModels(ampData_features, ampData_labels,
-    #                                                                ampData_testFeatures,
-    #                                                                ampData_testLabels, ampData_fileNames,
-    #                                                                saveFilePath,
-    #                                                                headers, modelPBar, consoleOutput)
-    #
-    #                 for i in range(len(count)):
-    #                     # print("%sGuess accuracy: %s; " % (count[i], resultSet[i]))
-    #                     res.append("%sFirst Model Guess accuracy: %s; " % (count[i], resultSet[i]))
-    #
-    #             def secondTypeStudy():
-    #
-    #                 print("Process 2 starting")
-    #                 count, resultSet = Models.studySecondTypeModels(ampData_features, ampData_labels,
-    #                                                                 ampData_testFeatures,
-    #                                                                 ampData_testLabels, ampData_fileNames,
-    #                                                                 saveFilePath,
-    #                                                                 headers, consoleOutput)
-    #
-    #                 for i in range(len(count)):
-    #                     # print("%sGuess accuracy: %s; " % (count[i], resultSet[i]))
-    #                     res.append("%sSecond Model Guess accuracy: %s; " % (count[i], resultSet[i]))
-    #
-    #             def thirdTypeStudy():
-    #
-    #                 print("Process 3 starting")
-    #                 count, resultSet = Models.studyThirdTypeModels(ampData_features, ampData_labels,
-    #                                                                ampData_testFeatures,
-    #                                                                ampData_testLabels, ampData_fileNames,
-    #                                                                saveFilePath,
-    #                                                                headers, modelPBar, consoleOutput)
-    #
-    #                 for i in range(len(count)):
-    #                     # print("%sGuess accuracy: %s; " % (count[i], resultSet[i]))
-    #                     res.append("%sThird Model Guess accuracy: %s; " % (count[i], resultSet[i]))
-    #
-    #             def fourthTypeStudy():
-    #
-    #                 print("Process 4 starting")
-    #                 count, resultSet = Models.studyFourthTypeModels(ampData_features, ampData_labels,
-    #                                                                 ampData_testFeatures,
-    #                                                                 ampData_testLabels, ampData_fileNames,
-    #                                                                 saveFilePath,
-    #                                                                 headers, consoleOutput)
-    #
-    #                 for i in range(len(count)):
-    #                     # print("%sGuess accuracy: %s; " % (count[i], resultSet[i]))
-    #                     res.append("%sFourth Model Guess accuracy: %s; " % (count[i], resultSet[i]))
-    #
-    #             # Models.studyGeneticTypeModels(ampData_features, ampData_labels,
-    #             #                               ampData_testFeatures,
-    #             #                               ampData_testLabels, ampData_fileNames, saveFilePath,
-    #             #                               headers)
-    #
-    #             number_of_cpu = joblib.cpu_count()
-    #
-    #             delayed_funcs = []
-    #
-    #             delayed_funcs.append((delayed(firstTypeStudy)()))
-    #             delayed_funcs.append((delayed(secondTypeStudy)()))
-    #
-    #             parallel_pool = Parallel(n_jobs=number_of_cpu, prefer="threads")
-    #
-    #             parallel_pool(delayed_funcs)
-    #
-    #             delayed_funcs_2 = []
-    #
-    #             delayed_funcs_2.append((delayed(thirdTypeStudy)()))
-    #             delayed_funcs_2.append((delayed(fourthTypeStudy)()))
-    #
-    #             parallel_pool_2 = Parallel(n_jobs=number_of_cpu, prefer="threads")
-    #
-    #             parallel_pool_2(delayed_funcs_2)
-    #
-    #             # Model sorting
-    #
-    #             models = os.listdir(saveFilePath)
-    #
-    #             files = {}
-    #
-    #             for model in models:
-    #                 before, sep, after = model.rpartition(", ")
-    #                 files[before] = after
-    #                 for key, value in files.items():
-    #                     if after > value and key != before:
-    #                         files[before] = after
-    #
-    #             bestModels = []
-    #             for key, value in files.items():
-    #                 bestModels.append(key + ", " + value)
-    #
-    #             for filename in os.listdir(saveFilePath):
-    #                 if filename not in bestModels:
-    #                     shutil.rmtree(saveFilePath + "/" + filename, ignore_errors=False, onerror=None)
-    #         else:
-    #
-    #             combData_features, combData_labels, combData_fileNames, headers = TensorDataProcessing.getSingleSheetDataSet(
-    #                 filePath)
-    #
-    #             # Test Features
-    #             combData_testFeatures, combData_testLabels, combData_fileNames, test_headers = TensorDataProcessing.getSingleSheetDataSet(
-    #                 testFilePath)
-    #
-    #             # count, resultSet = Models.studyFirstTypeModels(combData_features, combData_labels, combData_testFeatures,
-    #             #                                                combData_testLabels, combData_fileNames, saveFilePath, headers)
-    #             #
-    #             # for i in range(len(count)):
-    #             #     print("%sGuess accuracy: %s; " % (count[i], resultSet[i]))
-    #
-    #             res = []
-    #
-    #             def firstTypeStudy():
-    #                 # print("Process 1 starting")
-    #                 count, resultSet = Models.studyFirstTypeModels(combData_features, combData_labels,
-    #                                                                combData_testFeatures,
-    #                                                                combData_testLabels, combData_fileNames,
-    #                                                                saveFilePath, headers, modelPBar)
-    #
-    #                 for i in range(len(count)):
-    #                     # print("%sGuess accuracy: %s; " % (count[i], resultSet[i]))
-    #                     res.append("%sFirst Model Guess accuracy: %s; " % (count[i], resultSet[i]))
-    #
-    #             def secondTypeStudy():
-    #                 # print("Process 2 starting")
-    #                 count, resultSet = Models.studySecondTypeModels(combData_features, combData_labels,
-    #                                                                 combData_testFeatures,
-    #                                                                 combData_testLabels, combData_fileNames,
-    #                                                                 saveFilePath, headers)
-    #
-    #                 for i in range(len(count)):
-    #                     # print("%sGuess accuracy: %s; " % (count[i], resultSet[i]))
-    #                     res.append("%sSecond Model Guess accuracy: %s; " % (count[i], resultSet[i]))
-    #
-    #             def thirdTypeStudy():
-    #                 print("Process 3 starting")
-    #                 count, resultSet = Models.studyThirdTypeModels(combData_features, combData_labels,
-    #                                                                combData_testFeatures,
-    #                                                                combData_testLabels, combData_fileNames,
-    #                                                                saveFilePath, headers)
-    #
-    #                 for i in range(len(count)):
-    #                     # print("%sGuess accuracy: %s; " % (count[i], resultSet[i]))
-    #                     res.append("%sThird Model Guess accuracy: %s; " % (count[i], resultSet[i]))
-    #
-    #             def fourthTypeStudy():
-    #                 print("Process 4 starting")
-    #                 count, resultSet = Models.studyFourthTypeModels(combData_features, combData_labels,
-    #                                                                 combData_testFeatures,
-    #                                                                 combData_testLabels, combData_fileNames,
-    #                                                                 saveFilePath, headers)
-    #
-    #                 for i in range(len(count)):
-    #                     # print("%sGuess accuracy: %s; " % (count[i], resultSet[i]))
-    #                     res.append("%sFourth Model Guess accuracy: %s; " % (count[i], resultSet[i]))
-    #
-    #             number_of_cpu = joblib.cpu_count()
-    #
-    #             delayed_funcs = []
-    #
-    #             delayed_funcs.append((delayed(firstTypeStudy)()))
-    #             delayed_funcs.append((delayed(secondTypeStudy)()))
-    #
-    #             parallel_pool = Parallel(n_jobs=number_of_cpu, prefer="threads")
-    #
-    #             parallel_pool(delayed_funcs)
-    #
-    #             delayed_funcs_2 = []
-    #
-    #             delayed_funcs_2.append((delayed(thirdTypeStudy)()))
-    #             delayed_funcs_2.append((delayed(fourthTypeStudy)()))
-    #
-    #             parallel_pool_2 = Parallel(n_jobs=number_of_cpu, prefer="threads")
-    #
-    #             parallel_pool_2(delayed_funcs_2)
-    #
-    #             # Model sorting
-    #
-    #             models = os.listdir(saveFilePath)
-    #
-    #             files = {}
-    #
-    #             for model in models:
-    #                 before, sep, after = model.rpartition(", ")
-    #                 files[before] = after
-    #                 for key, value in files.items():
-    #                     if after > value and key != before:
-    #                         files[before] = after
-    #
-    #             bestModels = []
-    #             for key, value in files.items():
-    #                 bestModels.append(key + ", " + value)
-    #
-    #             for filename in os.listdir(saveFilePath):
-    #                 if filename not in bestModels:
-    #                     shutil.rmtree(saveFilePath + "/" + filename, ignore_errors=False, onerror=None)
-    #
-    #         self.consoleOutput.insertPlainText("Моделі навчано... \n")
-    #
-    #         self.rawDataPathLabel.setText("Шлях до файлу з даними для навчання...")
-    #         self.usageDataPathLabel.setText("Шлях до файлу з даними для тестування...")
-    #     else:
-    #         self.consoleOutput.insertPlainText("Введіть необхідні дані... \n")
-
-# Paralel study var 2
-
-# Old ---------------------------------
-#     def studyModelsInitial(self):
+#         # 10. Predictions
+#         y_pred_probs = convModel.predict(X_test)  # Probabilities
+#         y_pred = np.argmax(y_pred_probs, axis=1)  # Predicted classes
+#         y_true = np.argmax(y_test, axis=1)  # True classes
 #
-#         saveFilePath = QFileDialog.getExistingDirectory(self, "Оберіть папку для збереження результату")
-#         filePath = self.rawDataPathLabel.text()
-#         testFilePath = self.usageDataPathLabel.text()
-#         modelPBar = self.modelPBar
-#         consoleOutput = self.consoleOutput
+#         # Show first 20 predictions vs real values
+#         pred_number = 23
+#         matchNumber = 0
+#         for i in range(pred_number):
+#             print(f"Sample {i}: Predicted={y_pred[i]}, Real={y_true[i]}")
+#             if y_pred[i] == y_true[i]:
+#                 matchNumber += 1
+#         print(f"Prediction Accuracy: {matchNumber} of {pred_number} is true. Percentage Accuracy: {(matchNumber/pred_number) * 100}")
 #
-#         if filePath and filePath != "Шлях до файлу з даними для навчання...":
+#         if (matchNumber/pred_number) * 100 > 80:
+#             convModel.save(f"D:/PythonProjects/MagRobotaData/Stattya_SavedModelsForTesting/Convolutional//Model_acc({(matchNumber/pred_number) * 100}), {datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
 #
-#                 xls = pd.ExcelFile(filePath)
-#                 l = len(xls.sheet_names)
+#         results = pd.DataFrame([{
+#             "Run": t,
+#             "Train Accuracy": history.history['accuracy'][-1],
+#             "Train Loss": history.history['loss'][-1],
+#             "Val Accuracy": history.history['val_accuracy'][-1],
+#             "Test Accuracy": test_acc,
+#             "Test Loss": test_loss,
+#             f"Test matches of {pred_number}": matchNumber,
+#             "Test prediction matches %": (matchNumber / pred_number) * 100
+#         }])
 #
-#                 # Check for multiple or single excel pages
-#                 if l > 1:
-#                     # Study Features
-#                     ampData_features, ampData_labels, ampData_fileNames, phaseData_features, phaseData_labels, \
-#                     phaseData_fileNames, headers = TensorDataProcessing.getMultipleSheetDataSet(filePath)
+#         # ==== Save or append to Excel ====
+#         results_df = pd.DataFrame(results)
 #
-#                     # Test Features
-#                     ampData_testFeatures, ampData_testLabels, ampData_fileNames, phaseData_testFeatures, \
-#                     phaseData_testLabels, phaseData_fileNames, test_headers = TensorDataProcessing.getMultipleSheetDataSet(
-#                         testFilePath)
+#         excel_file = "conv_results.xlsx"
 #
-#                     # Pass params for models
-#                     Models.passParams(ampData_features, ampData_labels,
-#                                       ampData_testFeatures,
-#                                       ampData_testLabels, ampData_fileNames,
-#                                       saveFilePath,
-#                                       headers, modelPBar, consoleOutput)
+#         try:
+#             # Append if file exists
+#             existing = pd.read_excel(excel_file)
+#             results_df = pd.concat([existing, results_df], ignore_index=True)
+#         except FileNotFoundError:
+#             # Create new if it doesn’t exist
+#             pass
 #
-#                     thread_pool = QtCore.QThreadPool.globalInstance()
+#         results_df.to_excel(excel_file, index=False)
+#         print(f"Results saved to {excel_file}")
 #
+#     # -------------------------------------------------------------
 #
-#                     self.consoleOutput.insertPlainText("Іде обробка... \n")
-#                     # Trigger for second models set
-#                     t = False
-#                     # First two model types
-#                     # for task in (Models.studyFirstTypeModels, Models.studySecondTypeModels):
-#                     for task in (Models.studyFirstTypeClusteringModels, Models.studySecondTypeClusteringModels):
-#                         worker = Models.Worker(task)
-#                         # Progress output to console
-#                         Models.infoSignal.progress.connect(self.print_progress)
-#                         Models.callbackSignal.callback.connect(self.print_progress)
-#                         # Models study results
-#                         worker.signals.result.connect(self.get_models_result)
-#                         # Final models sorting
-#                         worker.signals.finished.connect(self.thread_complete)
-#                         # Additional sets of models
-#                         if t == True:
-#                             worker.signals.finished.connect(self.studySecondSetOfModels)
-#                         thread_pool.start(worker)
-#                         t = True
-#                 else:
-#                     # Study Features
-#                     combData_features, combData_labels, combData_fileNames, headers = TensorDataProcessing.getSingleSheetDataSet(
-#                     filePath)
+#     """
+#     LSTM via 2D, excluding timestamps
+#     """
 #
-#                     # Test Features
-#                     combData_testFeatures, combData_testLabels, combData_fileNames, test_headers = TensorDataProcessing.getSingleSheetDataSet(
-#                     testFilePath)
+#     wb = load_workbook("D:/PythonProjects/MagRobotaData/data/TestingDump/Test/08.25/Set/20.08_SetCombined.xlsx")
+#     ws = wb.active
 #
-#                     # Pass params for models
-#                     Models.passParams(combData_features, combData_labels,
-#                                       combData_testFeatures,
-#                                       combData_testLabels, combData_fileNames,
-#                                       saveFilePath,
-#                                       headers, modelPBar, consoleOutput)
+#     data = []
+#     for row in ws.iter_rows(values_only=True):
+#         # data.append(list(row[1:])) # - Full list
+#         # data.append(list(row[1:-1])) # - Timbre -1, (3)
+#         # data.append(list(row[1:-2]))  # - Timbre -2, (2)
+#         # data.append(list(row[1:-3]))  # - Timbre -3, (1)
+#         # data.append(list(row[1:-4]))  # - Pitch
+#         data.append(list(row[1:-5]))  # - Amp only
 #
-#                     thread_pool = QtCore.QThreadPool.globalInstance()
+#     data = data[1:]  # skip header
 #
-#                     self.consoleOutput.insertPlainText("Іде обробка... \n")
-#                     # Trigger for second models set
-#                     t = False
-#                     # First two model types
-#                     for task in (Models.studyFirstTypeModels, Models.studySecondTypeModels):
-#                         worker = Models.Worker(task)
-#                         # Progress output to console
-#                         Models.infoSignal.progress.connect(self.print_progress)
-#                         Models.callbackSignal.callback.connect(self.print_progress)
-#                         # Models study results
-#                         worker.signals.result.connect(self.get_models_result)
-#                         # Final models sorting
-#                         worker.signals.finished.connect(self.thread_complete)
-#                         # Additional sets of models
-#                         if t == True:
-#                             worker.signals.finished.connect(self.studySecondSetOfModels)
-#                         thread_pool.start(worker)
-#                         t = True
+#     x_data = []
+#     y_data = []
 #
-#     # Methods for additional sets of models to study
-#     def studySecondSetOfModels(self):
+#     for row in data:
+#         y_data.append(row[0])  # label in column B
+#         x_data.append(row[1:])  # all numeric features
 #
-#         thread_pool = QtCore.QThreadPool.globalInstance()
+#     x_data = np.array(x_data, dtype=float)
+#     y_data = np.array(y_data, dtype=int)
 #
-#         # Second two model types
-#         for task in (Models.studyThirdTypeModels, Models.studyFourthTypeModels):
-#             worker = Models.Worker(task)
-#             # Progress output to console
-#             Models.infoSignal.progress.connect(self.print_progress)
-#             Models.callbackSignal.callback.connect(self.print_progress)
-#             # Models study results
-#             worker.signals.result.connect(self.get_models_result)
-#             # Final models sorting
-#             worker.signals.finished.connect(self.thread_complete)
-#             thread_pool.start(worker)
+#     # 2. Normalize features
+#     scaler = StandardScaler()
+#     X_norm = scaler.fit_transform(x_data)
 #
-#     def studyClusteredSetOfModels(self):
+#     # 3. Reshape for LSTM: (samples, timesteps, features)
+#     # Here timesteps = number of feature columns, features = 1
+#     X_lstm = X_norm.reshape(X_norm.shape[0], X_norm.shape[1], 1)
 #
-#         thread_pool = QtCore.QThreadPool.globalInstance()
+#     # 4. One-hot encode labels
+#     y_cat = to_categorical(y_data, num_classes=2)
 #
-#         # Second two model types
-#         for task in (Models.studyFirstTypeClusteringModels, Models.studySecondTypeClusteringModels):
-#             worker = Models.Worker(task)
-#             # Progress output to console
-#             Models.infoSignal.progress.connect(self.print_progress)
-#             Models.callbackSignal.callback.connect(self.print_progress)
-#             # Models study results
-#             worker.signals.result.connect(self.get_models_result)
-#             # Final models sorting
-#             worker.signals.finished.connect(self.thread_complete)
-#             thread_pool.start(worker)
+#     # 5. Train/test split
+#     X_train, X_test, y_train, y_test = train_test_split(
+#         X_lstm, y_cat, test_size=0.3, random_state=42, stratify=y_data
+#     )
+#
+#     print(f"Train shape: {X_train.shape}, Test shape: {X_test.shape}")
+#
+#     # 6. LSTM Model
+#
+#     empty_df = pd.DataFrame()
+#     empty_df.to_excel("lstm2D_results.xlsx", index=False, header=False)
+#
+#     for t in range(1, numberOftests + 1):
+#
+#         lstm2DModel = Sequential([
+#             LSTM(64, input_shape=(X_lstm.shape[1], 1), return_sequences=True),
+#             Dropout(0.3),
+#             LSTM(32),
+#             Dropout(0.3),
+#             Dense(64, activation='relu'),
+#             Dropout(0.4),
+#             Dense(2, activation='softmax')
+#         ])
+#
+#         lstm2DModel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+#         lstm2DModel.summary()
+#
+#         # 7. Train
+#         history = lstm2DModel.fit(X_train, y_train, validation_split=0.3, epochs=15, batch_size=32)
+#
+#         # 8. Evaluate
+#         test_loss, test_acc = lstm2DModel.evaluate(X_test, y_test)
+#         print(f"\nTest Accuracy: {test_acc * 100:.2f}%")
+#
+#         # 9. Predictions
+#         y_pred_probs = lstm2DModel.predict(X_test)
+#         y_pred = np.argmax(y_pred_probs, axis=1)
+#         y_true = np.argmax(y_test, axis=1)
+#
+#         pred_number = 23
+#         matchNumber = 0
+#         for i in range(pred_number):
+#             print(f"Sample {i}: Predicted={y_pred[i]}, Real={y_true[i]}")
+#             if y_pred[i] == y_true[i]:
+#                 matchNumber += 1
+#         print(
+#             f"Prediction Accuracy: {matchNumber} of {pred_number} is true. Percentage Accuracy: {(matchNumber / pred_number) * 100}")
+#
+#         if (matchNumber/pred_number) * 100 > 80:
+#             lstm2DModel.save(f"D:/PythonProjects/MagRobotaData/Stattya_SavedModelsForTesting/LSTM2/Model_acc({(matchNumber / pred_number) * 100}), {datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
+#
+#         results = pd.DataFrame([{
+#             "Run": t,
+#             "Train Accuracy": history.history['accuracy'][-1],
+#             "Train Loss": history.history['loss'][-1],
+#             "Val Accuracy": history.history['val_accuracy'][-1],
+#             "Test Accuracy": test_acc,
+#             "Test Loss": test_loss,
+#             f"Test matches of {pred_number}": matchNumber,
+#             "Test prediction matches %": (matchNumber / pred_number) * 100
+#         }])
+#
+#         # ==== Save or append to Excel ====
+#         results_df = pd.DataFrame(results)
+#
+#         excel_file = "lstm2D_results.xlsx"
+#
+#         try:
+#             # Append if file exists
+#             existing = pd.read_excel(excel_file)
+#             results_df = pd.concat([existing, results_df], ignore_index=True)
+#         except FileNotFoundError:
+#             # Create new if it doesn’t exist
+#             pass
+#
+#         results_df.to_excel(excel_file, index=False)
+#         print(f"Results saved to {excel_file}")
+#
+# # -----------------------------------------------------------------------------
+#
+# # -----------------------------------------------------------------------------
+#
+#     """
+#     LSTM - Via sequences
+#     """
+#
+#     # Load the workbook and select the active sheet
+#     wb = load_workbook("D:/PythonProjects/MagRobotaData/data/TestingDump/Test/08.25/Set/20.08_SetCombined.xlsx")
+#     ws = wb.active
+#
+#     data = []
+#     for row in ws.iter_rows(values_only=True):
+#         data.append(list(row))
+#
+#     data = data[1:]
+#
+#     file_ids = [row[0] for row in data]  # col A
+#     y_data = [row[1] for row in data]  # col B
+#     # x_data = [row[2:] for row in data]  # cols C..end
+#     # x_data = [row[2:-1] for row in data]
+#     # x_data = [row[2:-2] for row in data]
+#     # x_data = [row[2:-3] for row in data]
+#     # x_data = [row[2:-4] for row in data]
+#     x_data = [row[2:-5] for row in data]
+#
+#     # data.append(list(row[1:])) # - Full list
+#     # data.append(list(row[1:-1])) # - Timbre -1, (3)
+#     # data.append(list(row[1:-2]))  # - Timbre -2, (2)
+#     # data.append(list(row[1:-3]))  # - Timbre -3, (1)
+#     # data.append(list(row[1:-4]))  # - Pitch
+#     # data.append(list(row[1:-5]))  # - Amp only
+#
+#     x_data = np.array(x_data, dtype=float)
+#     y_data = np.array(y_data, dtype=int)
+#
+#     # Normalize features
+#     scaler = StandardScaler()
+#     x_data = scaler.fit_transform(x_data)
+#
+#     def get_base_id(filename):
+#         # Example: "file_a_12.wav" → "file_a"
+#         return re.sub(r"_\d+\.wav$", "", filename)
+#
+#     base_ids = [get_base_id(row[0]) for row in data]
+#
+#     # Parameters
+#     SEQ_LEN = 5  # number of timesteps per sequence
+#     features = x_data.shape[1]
+#
+#     X_seq, y_seq = [], []
+#
+#     unique_files = list(set(base_ids))
+#     for f in unique_files:
+#         indices = [i for i, fid in enumerate(base_ids) if fid == f]
+#         seq_features = x_data[indices]
+#         seq_labels = y_data[indices]
+#
+#         # slice into sequences
+#         for i in range(0, len(indices) - SEQ_LEN + 1, SEQ_LEN):
+#             X_seq.append(seq_features[i:i + SEQ_LEN])
+#             y_seq.append(int(np.round(np.mean(seq_labels[i:i + SEQ_LEN]))))
+#
+#     X_seq = np.array(X_seq)
+#     y_seq = np.array(y_seq)
+#
+#     print("Final shape:", X_seq.shape, y_seq.shape)  # (num_sequences, SEQ_LEN, features)
+#
+#     X_train, X_test, y_train, y_test = train_test_split(
+#         X_seq, y_seq, test_size=0.3, random_state=42, stratify=y_seq
+#     )
+#
+#     y_train = to_categorical(y_train, num_classes=2)
+#     y_test = to_categorical(y_test, num_classes=2)
+#
+#     print("Train:", X_train.shape, y_train.shape)
+#     print("Test:", X_test.shape, y_test.shape)
+#
+#     empty_df = pd.DataFrame()
+#     empty_df.to_excel("lstm3D_results.xlsx", index=False, header=False)
+#
+#     for t in range(1, numberOftests + 1):
+#
+#         lstm3Dmodel = Sequential([
+#             LSTM(128, input_shape=(X_seq.shape[1], X_seq.shape[2]), return_sequences=True),
+#             Dropout(0.3),
+#             LSTM(64),
+#             Dropout(0.3),
+#             Dense(64, activation='relu'),
+#             Dropout(0.4),
+#             Dense(2, activation='softmax')
+#         ])
+#
+#         lstm3Dmodel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+#         lstm3Dmodel.summary()
+#
+#         history = lstm3Dmodel.fit(
+#             X_train, y_train,
+#             validation_split=0.2,
+#             epochs=30,
+#             batch_size=8,
+#             verbose=1
+#         )
+#
+#         test_loss, test_acc = lstm3Dmodel.evaluate(X_test, y_test)
+#         print(f"\nTest Accuracy: {test_acc * 100:.2f}%")
+#
+#         # Predictions
+#         y_pred_probs = lstm3Dmodel.predict(X_test)
+#         y_pred = np.argmax(y_pred_probs, axis=1)
+#         y_true = np.argmax(y_test, axis=1)
+#         # y_true = np.argmax(y_test)
+#
+#         print(y_pred)
+#         print(y_true)
+#         matchNumber = 0
+#         for i in range(len(y_true)):
+#             if y_pred[i] == y_true[i]:
+#                 matchNumber += 1
+#             print(f"Seq {i}: Pred={y_pred[i]} ({y_pred_probs[i][y_pred[i]] * 100:.1f}%) | Real={y_true[i]}")
+#
+#         if test_acc * 100 > 50:
+#             lstm3Dmodel.save(f"D:/PythonProjects/MagRobotaData/Stattya_SavedModelsForTesting/LSTM3/Model_acc({test_acc * 100}), {datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
+#
+#         results = pd.DataFrame([{
+#             "Run": t,
+#             "Train Accuracy": history.history['accuracy'][-1],
+#             "Train Loss": history.history['loss'][-1],
+#             "Val Accuracy": history.history['val_accuracy'][-1],
+#             "Test Accuracy": test_acc,
+#             "Test Loss": test_loss,
+#             f"Test matches of {len(y_pred)}": matchNumber,
+#             "Test prediction matches %": (matchNumber / len(y_true)) * 100
+#         }])
+#
+#         # ==== Save or append to Excel ====
+#         results_df = pd.DataFrame(results)
+#
+#         excel_file = "lstm3D_results.xlsx"
+#
+#         try:
+#             # Append if file exists
+#             existing = pd.read_excel(excel_file)
+#             results_df = pd.concat([existing, results_df], ignore_index=True)
+#         except FileNotFoundError:
+#             # Create new if it doesn’t exist
+#             pass
+#
+#         results_df.to_excel(excel_file, index=False)
+#         print(f"Results saved to {excel_file}")
 
 
-# File Procession via threads
 
-# class FileProcession(QObject):
-#
-#     finished = pyqtSignal()
-#     progress = pyqtSignal(int)
-#
-#     def processAudioFiles(self, filePath, folderPathLabel, rangeLabel, allyLabel):
-#
-#         filePath = filePath + "/"
-#
-#         if folderPathLabel != "Шлях до папки з звуковими файлами...":
-#             for i in range(1):
-#                 sleep(1)
-#
-#                 filesList = [f for f in listdir(folderPathLabel) if
-#                              isfile(join(folderPathLabel, f))]
-#                 filesList = natsort.natsorted(filesList)
-#
-#                 rangeStart, rangeEnd = rangeLabel.split(" / ")
-#
-#                 Processing.processFiles(folderPathLabel, filesList, int(allyLabel),
-#                                         int(rangeStart), int(rangeEnd), filePath)
-#                 self.progress.emit(i + 1)
-#             self.finished.emit()
-#         else:
-#             self.consoleOutput.insertPlainText("Некоректний формат файлів для обробки! \n")
 

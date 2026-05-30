@@ -156,7 +156,7 @@ def studyFirstTypeModels():
         consoleOutput.insertPlainText("Відсутній один, або декілька необхідних для навчання наборів даних... \n")
     else:
         modelType = " Dense Mlp"
-        tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
+        # tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
         # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
         infoSignal.progress.emit(f'Model: {modelType}, training started!')
 
@@ -198,23 +198,31 @@ def studyFirstTypeModels():
             print(f"\nTest loss: {testLoss:.4f}")
 
             # Detailed classification report, Model prediction (testing)
-            yPred = mlpModel.predict(X_test)
-            yPredClasses = (yPred > 0.5).astype(int)
 
+            yPred = mlpModel.predict(X_test)
+            yPred = numpy.argmax(yPred, axis=1)  # Predicted classes
+            yTrue = numpy.argmax(y_test, axis=1)  # True classes
+
+            predPercent = 0.35
+            predNumber = int(len(X_test) * predPercent)
             matchNumber = 0
-            for i in range(len(y_test)):
-                print(f"{y_test[i]} - {yPredClasses[i]}")
-                if y_test[i] == yPredClasses[i][0]:
+
+            randomIndices = numpy.random.choice(
+                len(X_test),
+                predNumber,
+                replace=False
+            )
+
+            print(randomIndices)
+            for idx in randomIndices:
+                print(f"Sample {idx}: Predicted={yPred[idx]}, Real={yTrue[idx]}")
+                if yPred[idx] == yTrue[idx]:
                     matchNumber += 1
 
-            testAcc = (matchNumber / len(y_test)) * 100
+            testAcc = (matchNumber / predNumber) * 100
 
-            print(
-                f"Matches: {matchNumber} of {len(y_test)} is true. Percentage Accuracy: {testAcc}")
-
-            # With and without file names
-            # count = countGuesses(fileNames, y_true, y_pred)
-            count = countGuesses(y_test, yPredClasses, i+1)
+            count = f"Matches: {matchNumber} of {predNumber} is true. Guess Accuracy: {testAcc}"
+            print(count)
 
             # All models saving
 
@@ -245,7 +253,7 @@ def studySecondTypeModels():
         consoleOutput.insertPlainText("Відсутній один, або декілька необхідних для навчання наборів даних... \n")
     else:
         modelType = "Convolutional"
-        tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
+        # tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
         # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
 
         infoSignal.progress.emit(f'Model: {modelType}, training started!')
@@ -296,30 +304,31 @@ def studySecondTypeModels():
             convModel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
             history = convModel.fit(X_train, y_train, validation_split=0.2, epochs=30, batch_size=32)
 
-            # Evaluate on test set
-            testLoss, testAcc = convModel.evaluate(X_test, y_test)
-
             # Detailed classification report, Model prediction (testing)
             yPred = convModel.predict(X_test)
             yPred = numpy.argmax(yPred, axis=1)  # Predicted classes
             yTrue = numpy.argmax(y_test, axis=1)  # True classes
 
-            predNumber = 20
+            predPercent = 0.35
+            predNumber = int(len(X_test) * predPercent)
             matchNumber = 0
-            for i in range(predNumber):
-                print(f"Sample {i}: Predicted={yPred[i]}, Real={yTrue[i]}")
-                if yPred[i] == yTrue[i]:
+
+            randomIndices = numpy.random.choice(
+                len(X_test),
+                predNumber,
+                replace=False
+            )
+
+            print(randomIndices)
+            for idx in randomIndices:
+                print(f"Sample {idx}: Predicted={yPred[idx]}, Real={yTrue[idx]}")
+                if yPred[idx] == yTrue[idx]:
                     matchNumber += 1
 
             testAcc = (matchNumber / predNumber) * 100
 
-            print(
-                f"Matches: {matchNumber} of {predNumber} is true. Percentage Accuracy: {testAcc}")
-
-            # With and without file names
-            # count = countGuesses(fileNames, y_true, y_pred)
-            count = countGuesses(yTrue, yPred, i + 1)
-
+            count = f"Matches: {matchNumber} of {predNumber} is true. Guess Accuracy: {testAcc}"
+            print(count)
             # All models saving
 
             path = "%s/%s, %f" % (savePath, modelType, testAcc)
@@ -349,7 +358,7 @@ def studyThirdTypeModels():
         consoleOutput.insertPlainText("Відсутній один, або декілька необхідних для навчання наборів даних... \n")
     else:
         modelType = "2D LSTM"
-        tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
+        # tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
         # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
 
         infoSignal.progress.emit(f'Model: {modelType}, training started!')
@@ -392,29 +401,30 @@ def studyThirdTypeModels():
             lstm2DModel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
             history = lstm2DModel.fit(X_train, y_train, validation_split=0.2, epochs=30, batch_size=32)
 
-            # Evaluate on test set
-            testLoss, testAcc = lstm2DModel.evaluate(X_test, y_test)
-
             # Detailed classification report, Model prediction (testing)
             yPred = lstm2DModel.predict(X_test)
             yPred = numpy.argmax(yPred, axis=1)  # Predicted classes
             yTrue = numpy.argmax(y_test, axis=1)  # True classes
 
-            predNumber = 20
+            predPercent = 0.35
+            predNumber = int(len(X_test) * predPercent)
             matchNumber = 0
-            for i in range(predNumber):
-                print(f"Sample {i}: Predicted={yPred[i]}, Real={yTrue[i]}")
-                if yPred[i] == yTrue[i]:
+
+            randomIndices = numpy.random.choice(
+                len(X_test),
+                predNumber,
+                replace=False
+            )
+
+            for idx in randomIndices:
+                print(f"Sample {idx}: Predicted={yPred[idx]}, Real={yTrue[idx]}")
+                if yPred[idx] == yTrue[idx]:
                     matchNumber += 1
 
             testAcc = (matchNumber / predNumber) * 100
 
-            print(
-                f"Matches: {matchNumber} of {predNumber} is true. Percentage Accuracy: {testAcc}")
-
-            # With and without file names
-            # count = countGuesses(fileNames, y_true, y_pred)
-            count = countGuesses(yTrue, yPred, i + 1)
+            count = f"Matches: {matchNumber} of {predNumber} is true. Guess Accuracy: {testAcc}"
+            print(count)
 
             # All models saving
             path = "%s/%s, %f" % (savePath, modelType, testAcc)
@@ -1214,20 +1224,20 @@ def getClusteredModel(model, trainFeatures, trainLabels, testFeatures, testLabel
 #     return res
 
 # Without file names
-def countGuesses(y_true, y_pred, cycle):
-    if len(y_true) == len(y_pred):
-
-        counter = 0
-        for i in range(len(y_true)):
-            if y_true[i] == y_pred[i] and y_pred[i]  == 100:
-                counter += 1
-
-        if counter != 0:
-            res = "Cycle %d, Result: %d guesses; " % (cycle, counter)
-        else:
-            res = "Cycle %d, Result: Zero guesses "
-
-        return res
+# def countGuesses(y_true, y_pred, cycle):
+#     if len(y_true) == len(y_pred):
+#
+#         counter = 0
+#         for i in range(len(y_true)):
+#             if y_true[i] == y_pred[i]:
+#                 counter += 1
+#
+#         if counter != 0:
+#             res = f"Result: {counter} guesses of {len(y_true)}; "
+#         else:
+#             res = "Result: Zero guesses "
+#
+#         return res
 
 # Save and load models
 def saveModel(model, savePath):

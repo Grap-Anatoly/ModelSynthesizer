@@ -27,16 +27,26 @@ if __name__ == '__main__':
     # sr = 22050 → max freq ≈ 11 kHz
     # sr = 16000 → max freq ≈ 8 kHz
     # sr = 8000 → max freq ≈ 4 kHz
+
     # DATASET_PATH = "D:\PythonProjects\AudioBirds"
     DATASET_PATH = "D:\PythonProjects\AudioBirds_Short"
-    # SAMPLE_RATE = 22050
-    SAMPLE_RATE = 16000
+
+    # For spectrogram
+
+    # SAMPLE_RATE = 16000
+    # CHUNK_DURATION = 3.0  # seconds
+    # CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
+    # MAX_FILES_PER_CLASS = 40
+
+    # For AudioData
+
+    SAMPLE_RATE = 22050
+    # SAMPLE_RATE = 16000
     # SAMPLE_RATE = 8000
     CHUNK_DURATION = 3.0  # seconds
     # CHUNK_DURATION = 1.5  # seconds
     CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
-    # MAX_FILES_PER_CLASS = None  # or set like 50
-    MAX_FILES_PER_CLASS = 40
+    MAX_FILES_PER_CLASS = 20
 
     # =========================
     # PLOTS
@@ -55,14 +65,6 @@ if __name__ == '__main__':
 
 
     def plot_spectrogram_grid(X, y, label_encoder=None, rows=3, cols=3):
-        """
-        X shape:
-            (samples, mel_bins, time_steps, 1)
-
-        y:
-            encoded labels
-
-        """
 
         total = rows * cols
 
@@ -410,6 +412,11 @@ if __name__ == '__main__':
     #
     #     return np.array(X), np.array(y)
 
+
+    """
+    Main Procession
+    Data type (Sound, Spectrogram etc) is chosen after try: cycle starts
+    """
     def process_dataset_split(dataset_path, test_size=0.2):
         X_train, y_train = [], []
         X_val, y_val = [], []
@@ -437,8 +444,8 @@ if __name__ == '__main__':
 
                 try:
                     # chunks = process_file(full_path)
-                    # chunks = process_file_multifeature(full_path)
-                    chunks = process_file_spectrogram(full_path, augment=True)
+                    chunks = process_file_multifeature(full_path)
+                    # chunks = process_file_spectrogram(full_path, augment=True)
 
                     for chunk in chunks:
                         X_train.append(chunk)
@@ -452,8 +459,8 @@ if __name__ == '__main__':
 
                 try:
                     # chunks = process_file(full_path)
-                    # chunks = process_file_multifeature(full_path)
-                    chunks = process_file_spectrogram(full_path, augment=False)
+                    chunks = process_file_multifeature(full_path)
+                    # chunks = process_file_spectrogram(full_path, augment=False)
 
                     for chunk in chunks:
                         X_val.append(chunk)
@@ -467,8 +474,8 @@ if __name__ == '__main__':
 
                 try:
                     # chunks = process_file(full_path)
-                    # chunks = process_file_multifeature(full_path)
-                    chunks = process_file_spectrogram(full_path, augment=False)
+                    chunks = process_file_multifeature(full_path)
+                    # chunks = process_file_spectrogram(full_path, augment=False)
 
                     for chunk in chunks:
                         X_test.append(chunk)
@@ -487,16 +494,17 @@ if __name__ == '__main__':
     # RUN PIPELINE
     # =========================
 
+    # For audio Data
     # X, y = process_dataset(DATASET_PATH)
-    X_train, y_train, X_val, y_val, X_test, y_test = process_dataset_split(DATASET_PATH)
-
-    print("X_train shape:", X_train.shape)
-    print("X_val shape:", X_val.shape)
-    print("X_test shape:", X_test.shape)
-
     # X_train = X_train / (np.max(np.abs(X_train), axis=1, keepdims=True) + 1e-8)
     # X_val = X_val / (np.max(np.abs(X_val), axis=1, keepdims=True) + 1e-8)
     # X_test = X_test / (np.max(np.abs(X_test), axis=1, keepdims=True) + 1e-8)
+    #
+    # For spectrogram
+    X_train, y_train, X_val, y_val, X_test, y_test = process_dataset_split(DATASET_PATH)
+    print("X_train shape:", X_train.shape)
+    print("X_val shape:", X_val.shape)
+    print("X_test shape:", X_test.shape)
 
     # Encode labels
     le = LabelEncoder()
@@ -609,16 +617,16 @@ if __name__ == '__main__':
     - ZCR
     """
 
-    # model = Sequential([
-    #     Conv1D(64, 5, activation='relu', input_shape=(CHUNK_SIZE, 3)),
-    #     MaxPooling1D(2),
-    #     Conv1D(64, 5, activation='relu'),
-    #     MaxPooling1D(2),
-    #     keras.layers.Dropout(0.2),
-    #     keras.layers.GlobalAveragePooling1D(),
-    #     Dense(64, activation='relu'),
-    #     Dense(len(np.unique(y_train)), activation='softmax')
-    # ])
+    model = Sequential([
+        Conv1D(64, 5, activation='relu', input_shape=(CHUNK_SIZE, 3)),
+        MaxPooling1D(2),
+        Conv1D(64, 5, activation='relu'),
+        MaxPooling1D(2),
+        keras.layers.Dropout(0.2),
+        keras.layers.GlobalAveragePooling1D(),
+        Dense(64, activation='relu'),
+        Dense(len(np.unique(y_train)), activation='softmax')
+    ])
 
     """Spectrogram"""
 
@@ -636,21 +644,25 @@ if __name__ == '__main__':
     #     Dense(len(np.unique(y_train)), activation='softmax')
     # ])
 
-    model = Sequential([
+    """
+    Good?
+    """
 
-        Conv2D(32, (3, 3), activation='relu',
-               input_shape=(X_train.shape[1], X_train.shape[2], 1)),
-        # keras.layers.BatchNormalization(),
-        MaxPooling2D((2, 2)),
-        Conv2D(64, (3, 3), activation='relu'),
-        MaxPooling2D((2, 2)),
-        Conv2D(128, (3, 3), activation='relu'),
-        MaxPooling2D((2, 2)),
-        Flatten(),
-        Dense(128, activation='relu'),
-        keras.layers.Dropout(0.5),
-        Dense(len(np.unique(y_train)), activation='softmax')
-    ])
+    # model = Sequential([
+    #
+    #     Conv2D(32, (3, 3), activation='relu',
+    #            input_shape=(X_train.shape[1], X_train.shape[2], 1)),
+    #     # keras.layers.BatchNormalization(),
+    #     MaxPooling2D((2, 2)),
+    #     Conv2D(64, (3, 3), activation='relu'),
+    #     MaxPooling2D((2, 2)),
+    #     Conv2D(128, (3, 3), activation='relu'),
+    #     MaxPooling2D((2, 2)),
+    #     Flatten(),
+    #     Dense(128, activation='relu'),
+    #     keras.layers.Dropout(0.5),
+    #     Dense(len(np.unique(y_train)), activation='softmax')
+    # ])
 
     # model = Sequential([
     #     Conv1D(32, 5, activation='relu', kernel_regularizer=regularizers.l2(0.001), input_shape=(CHUNK_SIZE, 1)),
@@ -672,7 +684,7 @@ if __name__ == '__main__':
     # ])
 
     model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=0.0005),
+        optimizer='Adam',
         loss='sparse_categorical_crossentropy',
         metrics=['accuracy']
     )
@@ -709,9 +721,9 @@ if __name__ == '__main__':
 
     if test_acc >= 0.6 and randomPred >= 5:
         modelName = model.config["type"] + str(f"_{test_acc:.5f}")
-        model.save(f"D:/PythonProjects/MagRobota/BirdsData/Models/{modelName}/birds_model.keras")
+        model.save(f"D:/PythonProjects/MagRobotaData/BirdsData/Models/{modelName}/birds_model.keras")
 
-        with open(f"D:/PythonProjects/MagRobota/BirdsData/Models/{modelName}/label_encoder.pkl", "wb") as f:
+        with open(f"D:/PythonProjects/MagRobotaData/BirdsData/Models/{modelName}/label_encoder.pkl", "wb") as f:
             pickle.dump(le, f)
             config = {
             "sample_rate": SAMPLE_RATE,
@@ -719,7 +731,7 @@ if __name__ == '__main__':
             "channels": 3
         }
 
-        with open(f"D:/PythonProjects/MagRobota/BirdsData/Models/{modelName}/config.json", "w") as f:
+        with open(f"D:/PythonProjects/MagRobotaData/BirdsData/Models/{modelName}/config.json", "w") as f:
             json.dump(config, f)
 
         print('Model Saved!')

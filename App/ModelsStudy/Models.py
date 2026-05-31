@@ -399,7 +399,7 @@ def studyThirdTypeModels():
             ])
 
             lstm2DModel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-            history = lstm2DModel.fit(X_train, y_train, validation_split=0.2, epochs=30, batch_size=32)
+            history = lstm2DModel.fit(X_train, y_train, validation_split=0.2, epochs=15, batch_size=32)
 
             # Detailed classification report, Model prediction (testing)
             yPred = lstm2DModel.predict(X_test)
@@ -449,345 +449,105 @@ def studyThirdTypeModels():
 
 # Fourth type (5 layers, sparce error)
 
-# @QtCore.pyqtSlot()
-# def studyFirstTypeModels():
-#
-#     if checkStudyData == False:
-#         consoleOutput.insertPlainText("Відсутній один, або декілька необхідних для навчання наборів даних... \n")
-#     else:
-#         modelType = "LSTM_2_DynamicLayers"
-#         tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
-#         # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
-#
-#         infoSignal.progress.emit(f'Model: {modelType}, training started!')
-#
-#         # Start and end params for full study cycle
-#         # model_start = headers[2]
-#         # model_start = model_start.split("Гц")[0]
-#         # model_end = headers[-1]
-#         # model_end = model_end.split("Гц")[0]
-#
-#         # Data preparation
-#         normalize = layers.Normalization()
-#         normalize.adapt(trainFeatures)
-#
-#         resultSet = []
-#         countSet = []
-#
-#         x_train = numpy.reshape(trainFeatures, (trainFeatures.shape[0], trainFeatures.shape[1],1))
-#         x_test = numpy.reshape(testFeatures, (testFeatures.shape[0], testFeatures.shape[1],1))
-#
-#         # Model params
-#         # last = 100, 75, 50
-#         first_layer, second_layer = 50, 50
-#         cycles = 5
-#         pBar.setMaximum(cycles)
-#         for i in range(cycles):
-#             # Layers
-#             sound_model = tf.keras.Sequential([
-#                 layers.LSTM(units=first_layer, return_sequences=True, input_shape=(x_train.shape[1], 1)),
-#                 layers.Dropout(0.2),
-#                 layers.LSTM(units=second_layer, return_sequences=True),
-#                 layers.Dropout(0.2),
-#                 layers.LSTM(units=50),
-#                 layers.Dropout(0.2),
-#                 layers.Dense(101),
-#             ])
-#
-#             # Compile
-#             sound_model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-#                                 optimizer=tf.optimizers.Adam(),
-#                                 metrics=['accuracy'])
-#             sound_model.summary()
-#
-#             # Model Study
-#             EPOCHS = 15
-#
-#             sound_model.fit(x_train, trainLabels, epochs=EPOCHS, batch_size=2, callbacks=[CustomCallback(), tensorboard])
-#             QApplication.processEvents()
-#
-#             # Model prediction (testing)
-#             y_pred = numpy.argmax(sound_model.predict(x_test), axis=1)
-#             QApplication.processEvents()
-#             print(y_pred)
-#
-#             y_true = testLabels
-#             rounded = []
-#
-#             for v in y_pred:
-#                 if v > 60:
-#                     rounded.append(100)
-#                 else:
-#                     rounded.append(0)
-#
-#             res = 0
-#             for j in range(len(rounded)):
-#                 if rounded[j] == y_true[j][0]:
-#                     res += 1
-#
-#             test_acc = res / len(y_true)
-#
-#             infoSignal.progress.emit(f'Model: {modelType}, Cycle:{i+1}, Test set accuracy: {test_acc:.0%}')
-#             QApplication.processEvents()
-#             print(f'Test set accuracy: {test_acc:.0%}')
-#
-#             # With and without file names
-#             # count = countGuesses(fileNames, y_true, y_pred)
-#             count = countGuesses(y_true, y_pred, i+1)
-#
-#             # All models saving
-#
-#             path = "%s/%s, %f" % (savePath, modelType, test_acc)
-#             saveModel(sound_model, path)
-#
-#             # Params for one process identification
-#             # with open(path + '\params.txt', 'w') as f:
-#             #     f.write(model_start + "\n")
-#             #     f.write(model_end)
-#
-#             # ------------------------------
-#
-#             resultSet.append(test_acc)
-#             countSet.append(count)
-#
-#             # Model params change
-#             first_layer += 10
-#             second_layer += 5
-#
-#             # Ui
-#             pBar.setValue(i+1)
-#             QApplication.processEvents()
-#
-#         return countSet, resultSet
-#     # 5 models
-
-# studyFirstTypeModels studyHighSoundTypeModels
-
-
-# @QtCore.pyqtSlot()
-# def studySecondTypeModels():
-#
-#     if checkStudyData == False:
-#         consoleOutput.insertPlainText("Відсутній один, або декілька необхідних для навчання наборів даних... \n")
-#     else:
-#         modelType = "LSTM_1_DynamicLayer"
-#         tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
-#         # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
-#
-#         infoSignal.progress.emit(f'Model: {modelType}, training started!')
-#
-#         # Start and end params for full study cycle
-#         # model_start = headers[2]
-#         # model_start = model_start.split("Гц")[0]
-#         # model_end = headers[-1]
-#         # model_end = model_end.split("Гц")[0]
-#
-#         # Data preparation
-#         normalize = layers.Normalization()
-#         normalize.adapt(trainFeatures)
-#
-#         resultSet = []
-#         countSet = []
-#
-#         x_train = numpy.reshape(trainFeatures, (trainFeatures.shape[0], trainFeatures.shape[1],1))
-#         x_test = numpy.reshape(testFeatures, (testFeatures.shape[0], testFeatures.shape[1],1))
-#
-#         # 3 layers, sparse categorical
-#         # last = 75 ,50 ,50
-#         first_layer = 50
-#         second_layer = 50
-#
-#         for i in range(1):
-#             # Layers
-#             sound_model = tf.keras.Sequential([
-#                 layers.LSTM(units=first_layer, return_sequences=True, input_shape=(x_train.shape[1], 1)),
-#                 layers.Dropout(0.2),
-#                 layers.LSTM(units=second_layer, return_sequences=True),
-#                 layers.Dropout(0.2),
-#                 layers.LSTM(units=50),
-#                 layers.Dropout(0.2),
-#                 layers.Dense(101),
-#
-#             ])
-#
-#             # Compile
-#             sound_model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-#                                 optimizer=tf.optimizers.Adam(),
-#                                 metrics=['accuracy'])
-#
-#             sound_model.summary()
-#
-#             # Model study
-#             EPOCHS = 15
-#
-#             sound_model.fit(x_train, trainLabels, epochs=EPOCHS, batch_size=2, callbacks=[CustomCallback(), tensorboard])
-#             QApplication.processEvents()
-#
-#             # Model prediction (testing)
-#             y_pred = numpy.argmax(sound_model.predict(x_test), axis=1)
-#             QApplication.processEvents()
-#             print(y_pred)
-#
-#             y_true = testLabels
-#             rounded = []
-#
-#             for v in y_pred:
-#                 if v > 60:
-#                     rounded.append(100)
-#                 else:
-#                     rounded.append(0)
-#
-#             res = 0
-#             for j in range(len(rounded)):
-#                 if rounded[j] == y_true[j][0]:
-#                     res += 1
-#
-#             test_acc = res / len(y_true)
-#
-#             infoSignal.progress.emit(f'Model: {modelType}, Cycle:{i+1}, Test set accuracy: {test_acc:.0%}')
-#             QApplication.processEvents()
-#             print(f'Test set accuracy: {test_acc:.0%}')
-#
-#             # count = countGuesses(fileNames, y_true, y_pred)
-#             count = countGuesses(y_true, y_pred, i+1)
-#
-#             # All models saving
-#
-#             path = "%s/%s, %f" % (savePath, modelType, test_acc)
-#             saveModel(sound_model, path)
-#
-#             # Models params for one process identifiaction
-#             # with open(path + '\params.txt', 'w') as f:
-#             #     f.write(model_start + "\n")
-#             #     f.write(model_end)
-#
-#             resultSet.append(test_acc)
-#             countSet.append(count)
-#
-#             # Model params change
-#             first_layer += 10
-#
-#             # Ui
-#             QApplication.processEvents()
-#
-#         return countSet, resultSet
-#         # 5 models
-
-# Third type (4 layers, squared error)
-# @QtCore.pyqtSlot()
-# def studyThirdTypeModels():
-#
-#     if checkStudyData == False:
-#         consoleOutput.insertPlainText("Відсутній один, або декілька необхідних для навчання наборів даних... \n")
-#     else:
-#         modelType = "LSTM_4_Layers"
-#         tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
-#         # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
-#
-#         infoSignal.progress.emit(f'Model: {modelType}, training started!')
-#
-#         # Start and end params for full study cycle
-#         # model_start = headers[2]
-#         # model_start = model_start.split("Гц")[0]
-#         # model_end = headers[-1]
-#         # model_end = model_end.split("Гц")[0]
-#
-#         # Data preparation
-#         normalize = layers.Normalization()
-#         normalize.adapt(trainFeatures)
-#
-#         resultSet = []
-#         countSet = []
-#
-#         x_train = numpy.reshape(trainFeatures, (trainFeatures.shape[0], trainFeatures.shape[1], 1))
-#         x_test = numpy.reshape(testFeatures, (testFeatures.shape[0], testFeatures.shape[1], 1))
-#
-#         # Model params
-#         first_layer, second_layer, third_layer = 50, 50, 50
-#         cycles = 5
-#         pBar.setMaximum(cycles)
-#         for i in range(cycles):
-#             # Layers
-#             sound_model = tf.keras.Sequential([
-#                 layers.LSTM(units=first_layer, return_sequences=True, input_shape=(x_train.shape[1], 1)),
-#                 layers.Dropout(0.2),
-#                 layers.LSTM(units=second_layer, return_sequences=True),
-#                 layers.Dropout(0.2),
-#                 layers.LSTM(units=third_layer, return_sequences=True),
-#                 layers.Dropout(0.2),
-#                 layers.LSTM(units=50),
-#                 layers.Dropout(0.2),
-#                 layers.Dense(101),
-#             ])
-#
-#             # Model compile
-#             sound_model.compile(loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-#                                 optimizer=tf.optimizers.Adam(),
-#                                 metrics=['accuracy'])
-#             sound_model.summary()
-#
-#             # Model study
-#             EPOCHS = 15
-#
-#             sound_model.fit(x_train, trainLabels, epochs=EPOCHS, batch_size=2, callbacks=[CustomCallback(), tensorboard])
-#             QApplication.processEvents()
-#
-#             # Model Prediction
-#             y_pred = numpy.argmax(sound_model.predict(x_test), axis=1)
-#             print(y_pred)
-#             QApplication.processEvents()
-#
-#             y_true = testLabels
-#             rounded = []
-#
-#             for v in y_pred:
-#                 if v > 60:
-#                     rounded.append(100)
-#                 else:
-#                     rounded.append(0)
-#
-#             res = 0
-#             for j in range(len(rounded)):
-#                 if rounded[j] == y_true[j][0]:
-#                     res += 1
-#
-#             test_acc = res / len(y_true)
-#
-#             infoSignal.progress.emit(f'Model: {modelType}, Cycle:{i + 1}, Test set accuracy: {test_acc:.0%}')
-#             QApplication.processEvents()
-#             print(f'Test set accuracy: {test_acc:.0%}')
-#
-#             # count = countGuesses(fileNames, y_true, y_pred)
-#             count = countGuesses(y_true, y_pred, i+1)
-#
-#             # All models saving
-#
-#             path = "%s/%s, %f" % (savePath, modelType, test_acc)
-#             saveModel(sound_model, path)
-#
-#             # Models params for one process identifiaction
-#             # with open(path + '\params.txt', 'w') as f:
-#             #     f.write(model_start + "\n")
-#             #     f.write(model_end)
-#
-#             resultSet.append(test_acc)
-#             countSet.append(count)
-#
-#             # Model params change
-#             first_layer += 10
-#             second_layer += 5
-#             third_layer += 3
-#
-#             # Ui
-#             pBar.setValue(i + 1)
-#             QApplication.processEvents()
-#
-#         return countSet, resultSet
-#         # 5 models
-#
-# # Fourth type (5 layers, sparce error)
 @QtCore.pyqtSlot()
 def studyFourthTypeModels():
+
+    if checkStudyData == False:
+        consoleOutput.insertPlainText("Відсутній один, або декілька необхідних для навчання наборів даних... \n")
+    else:
+        modelType = "2D LSTM"
+        # tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
+        # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
+
+        infoSignal.progress.emit(f'Model: {modelType}, training started!')
+
+        # Data preparation
+        resultSet = []
+        countSet = []
+
+        # 3. Normalize features
+        # trainFeatures, testFeatures, trainLabels, testLabels
+        scaler = StandardScaler()
+        XTrainNorm = scaler.fit_transform(trainFeatures)
+        XTestNorm = scaler.fit_transform(testFeatures)
+
+        # Reshape for CNN: (samples, height=num_frequencies, width=num_features, channels=1)
+        # If each sample has N features (num_columns), treat it as height=N, width=1
+        XTrainCnn = XTrainNorm.reshape(XTrainNorm.shape[0], XTrainNorm.shape[1], 1)
+        XTestCnn = XTestNorm.reshape(XTestNorm.shape[0], XTestNorm.shape[1], 1)
+
+        yTrainCat = to_categorical(trainLabels, num_classes=2)  # adjust num_classes if needed
+        yTestCat = to_categorical(testLabels, num_classes=2)
+
+        # 6. Train/test split
+        X_train, X_test, y_train, y_test = XTrainCnn, XTestCnn, yTrainCat, yTestCat
+
+        # 3 layers, sparse categorical
+
+        for i in range(1):
+            # Layers
+            lstm2DModel = Sequential([
+                LSTM(64, input_shape=(XTrainCnn.shape[1], 1), return_sequences=True),
+                Dropout(0.3),
+                LSTM(32),
+                Dropout(0.3),
+                Dense(64, activation='relu'),
+                Dropout(0.4),
+                Dense(2, activation='softmax')
+            ])
+
+            lstm2DModel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+            history = lstm2DModel.fit(X_train, y_train, validation_split=0.2, epochs=30, batch_size=32)
+
+            # Detailed classification report, Model prediction (testing)
+            yPred = lstm2DModel.predict(X_test)
+            yPred = numpy.argmax(yPred, axis=1)  # Predicted classes
+            yTrue = numpy.argmax(y_test, axis=1)  # True classes
+
+            predPercent = 0.35
+            predNumber = int(len(X_test) * predPercent)
+            matchNumber = 0
+
+            randomIndices = numpy.random.choice(
+                len(X_test),
+                predNumber,
+                replace=False
+            )
+
+            for idx in randomIndices:
+                print(f"Sample {idx}: Predicted={yPred[idx]}, Real={yTrue[idx]}")
+                if yPred[idx] == yTrue[idx]:
+                    matchNumber += 1
+
+            testAcc = (matchNumber / predNumber) * 100
+
+            count = f"Matches: {matchNumber} of {predNumber} is true. Guess Accuracy: {testAcc}"
+            print(count)
+
+            # All models saving
+            path = "%s/%s, %f" % (savePath, modelType, testAcc)
+            saveModel(lstm2DModel, path)
+
+            # Models params for one process identifiaction
+            # with open(path + '\params.txt', 'w') as f:
+            #     f.write(model_start + "\n")
+            #     f.write(model_end)
+
+            resultSet.append(testAcc)
+            countSet.append(count)
+
+            # Model params change
+            # first_layer += 10
+
+            # Ui
+            QApplication.processEvents()
+
+        return countSet, resultSet
+
+
+# # Fourth type (5 layers, sparce error)
+@QtCore.pyqtSlot()
+def studyFifthTypeModels():
 
     if checkStudyData == False:
         consoleOutput.insertPlainText("Відсутній один, або декілька необхідних для навчання наборів даних... \n")
@@ -797,12 +557,6 @@ def studyFourthTypeModels():
         # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
 
         infoSignal.progress.emit(f'Model: {modelType}, training started!')
-
-        # Start and end params for full study cycle
-        # model_start = headers[2]
-        # model_start = model_start.split("Гц")[0]
-        # model_end = headers[-1]
-        # model_end = model_end.split("Гц")[0]
 
         # Data preparation
         normalize = layers.Normalization()
@@ -851,33 +605,33 @@ def studyFourthTypeModels():
             print(y_pred)
             QApplication.processEvents()
 
-            y_true = testLabels
-            rounded = []
+            yPred = sound_model.predict(x_test)
+            yPred = numpy.argmax(yPred, axis=1)  # Predicted classes
+            yTrue = numpy.argmax(testLabels, axis=1)  # True classes
 
-            for v in y_pred:
-                if v > 60:
-                    rounded.append(100)
-                else:
-                    rounded.append(0)
+            predPercent = 0.35
+            predNumber = int(len(x_test) * predPercent)
+            matchNumber = 0
 
-            res = 0
-            for j in range(len(rounded)):
-                if rounded[j] == y_true[j][0]:
-                    res += 1
+            randomIndices = numpy.random.choice(
+                len(x_test),
+                predNumber,
+                replace=False
+            )
 
-            test_acc = res / len(y_true)
+            for idx in randomIndices:
+                print(f"Sample {idx}: Predicted={yPred[idx]}, Real={yTrue[idx]}")
+                if yPred[idx] == yTrue[idx]:
+                    matchNumber += 1
 
-            infoSignal.progress.emit(f'Model: {modelType}, Cycle:{i + 1}, Test set accuracy: {test_acc:.0%}')
-            QApplication.processEvents()
+            testAcc = (matchNumber / predNumber) * 100
 
-            print(f'Test set accuracy: {test_acc:.0%}')
-
-            # count = countGuesses(fileNames, y_true, y_pred)
-            count = countGuesses(y_true, y_pred, i+1)
+            count = f"Matches: {matchNumber} of {predNumber} is true. Guess Accuracy: {testAcc}"
+            print(count)
 
             # All models saving
 
-            path = "%s/%s, %f" % (savePath, modelType, test_acc)
+            path = "%s/%s, %f" % (savePath, modelType, testAcc)
             saveModel(sound_model, path)
 
             # Models params for one process identifiaction
@@ -885,7 +639,7 @@ def studyFourthTypeModels():
             #     f.write(model_start + "\n")
             #     f.write(model_end)
 
-            resultSet.append(test_acc)
+            resultSet.append(testAcc)
             countSet.append(count)
 
             # Model params change
@@ -970,46 +724,38 @@ def studyFirstTypeClusteringModels():
             print('Clustered test accuracy:', clustered_model_accuracy)
 
             # Model prediction (testing)
-            y_pred = numpy.argmax(clustered_model.predict(x_test), axis=1)
-            QApplication.processEvents()
-            print(y_pred)
+            yPred = sound_model.predict(x_test)
+            yPred = numpy.argmax(yPred, axis=1)  # Predicted classes
+            yTrue = numpy.argmax(testLabels, axis=1)  # True classes
 
-            y_true = testLabels
-            rounded = []
+            predPercent = 0.35
+            predNumber = int(len(x_test) * predPercent)
+            matchNumber = 0
 
-            for v in y_pred:
-                if v > 60:
-                    rounded.append(100)
-                else:
-                    rounded.append(0)
+            randomIndices = numpy.random.choice(
+                len(x_test),
+                predNumber,
+                replace=False
+            )
 
-            res = 0
-            for j in range(len(rounded)):
-                if rounded[j] == y_true[j][0]:
-                    res += 1
+            for idx in randomIndices:
+                print(f"Sample {idx}: Predicted={yPred[idx]}, Real={yTrue[idx]}")
+                if yPred[idx] == yTrue[idx]:
+                    matchNumber += 1
 
-            test_acc = res / len(y_true)
+            testAcc = (matchNumber / predNumber) * 100
 
-            infoSignal.progress.emit(f'Model: {modelType}, Cycle:{i+1}, Test set accuracy: {test_acc:.0%}')
-            QApplication.processEvents()
-            print(f'Test set accuracy: {test_acc:.0%}')
-
-            # count = countGuesses(fileNames, y_true, y_pred)
-            count = countGuesses(y_true, y_pred, i+1)
+            count = f"Matches: {matchNumber} of {predNumber} is true. Guess Accuracy: {testAcc}"
+            print(count)
 
             # All models saving
 
-            path = "%s/%s, %f" % (savePath, modelType, test_acc)
+            path = "%s/%s, %f" % (savePath, modelType, testAcc)
 
             final_model = tfmot.clustering.keras.strip_clustering(clustered_model)
             saveModel(final_model, path)
 
-            # Models params for one process identifiaction
-            # with open(path + '\params.txt', 'w') as f:
-            #     f.write(model_start + "\n")
-            #     f.write(model_end)
-
-            resultSet.append(test_acc)
+            resultSet.append(testAcc)
             countSet.append(count)
 
             # Model params change
@@ -1092,36 +838,33 @@ def studySecondTypeClusteringModels():
             print('Clustered test accuracy:', clustered_model_accuracy)
 
             # Model Prediction
-            y_pred = numpy.argmax(clustered_model.predict(x_test), axis=1)
-            print(y_pred)
-            QApplication.processEvents()
+            yPred = sound_model.predict(x_test)
+            yPred = numpy.argmax(yPred, axis=1)  # Predicted classes
+            yTrue = numpy.argmax(testLabels, axis=1)  # True classes
 
-            y_true = testLabels
-            rounded = []
+            predPercent = 0.35
+            predNumber = int(len(x_test) * predPercent)
+            matchNumber = 0
 
-            for v in y_pred:
-                if v > 60:
-                    rounded.append(100)
-                else:
-                    rounded.append(0)
+            randomIndices = numpy.random.choice(
+                len(x_test),
+                predNumber,
+                replace=False
+            )
 
-            res = 0
-            for j in range(len(rounded)):
-                if rounded[j] == y_true[j][0]:
-                    res += 1
+            for idx in randomIndices:
+                print(f"Sample {idx}: Predicted={yPred[idx]}, Real={yTrue[idx]}")
+                if yPred[idx] == yTrue[idx]:
+                    matchNumber += 1
 
-            test_acc = res / len(y_true)
+            testAcc = (matchNumber / predNumber) * 100
 
-            infoSignal.progress.emit(f'Model: {modelType}, Cycle:{i + 1}, Test set accuracy: {test_acc:.0%}')
-            QApplication.processEvents()
-            print(f'Test set accuracy: {test_acc:.0%}')
-
-            # count = countGuesses(fileNames, y_true, y_pred)
-            count = countGuesses(y_true, y_pred, i+1)
+            count = f"Matches: {matchNumber} of {predNumber} is true. Guess Accuracy: {testAcc}"
+            print(count)
 
             # All models saving
 
-            path = "%s/%s, %f" % (savePath, modelType, test_acc)
+            path = "%s/%s, %f" % (savePath, modelType, testAcc)
 
             final_model = tfmot.clustering.keras.strip_clustering(clustered_model)
             saveModel(final_model, path)
@@ -1131,7 +874,7 @@ def studySecondTypeClusteringModels():
             #     f.write(model_start + "\n")
             #     f.write(model_end)
 
-            resultSet.append(test_acc)
+            resultSet.append(testAcc)
             countSet.append(count)
 
             # Model params change

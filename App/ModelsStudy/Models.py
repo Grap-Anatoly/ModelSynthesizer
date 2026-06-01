@@ -441,7 +441,7 @@ def studyThirdTypeModels():
         return countSet, resultSet
         # 5 models
 
-# Fourth type (5 layers, sparce error)
+# Fourth type (5 layers)
 
 @QtCore.pyqtSlot()
 def studyFourthTypeModels():

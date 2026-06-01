@@ -157,7 +157,6 @@ def studyFirstTypeModels():
     else:
         modelType = " Dense Mlp"
         # tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
-        # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
         infoSignal.progress.emit(f'Model: {modelType}, training started!')
 
         # Data preparation
@@ -198,7 +197,6 @@ def studyFirstTypeModels():
             print(f"\nTest loss: {testLoss:.4f}")
 
             # Detailed classification report, Model prediction (testing)
-
             yPred = mlpModel.predict(X_test)
             yPred = numpy.argmax(yPred, axis=1)  # Predicted classes
             yTrue = numpy.argmax(y_test, axis=1)  # True classes
@@ -234,8 +232,6 @@ def studyFirstTypeModels():
             #     f.write(model_start + "\n")
             #     f.write(model_end)
 
-            # ------------------------------
-
             resultSet.append(testAcc)
             countSet.append(count)
 
@@ -254,8 +250,6 @@ def studySecondTypeModels():
     else:
         modelType = "Convolutional"
         # tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
-        # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
-
         infoSignal.progress.emit(f'Model: {modelType}, training started!')
 
         # Data preparation
@@ -265,27 +259,21 @@ def studySecondTypeModels():
         resultSet = []
         countSet = []
 
-        # 3. Normalize features
         scaler = StandardScaler()
-        # trainFeatures, testFeatures, trainLabels, testLabels
         XTrainNorm = scaler.fit_transform(trainFeatures)
         XTestNorm = scaler.fit_transform(testFeatures)
 
         # Reshape for CNN: (samples, height=num_frequencies, width=num_features, channels=1)
-        # If each sample has N features (num_columns), treat it as height=N, width=1
         XTrainCnn = XTrainNorm.reshape(XTrainNorm.shape[0], XTrainNorm.shape[1], 1, 1)
         XTestCnn = XTestNorm.reshape(XTestNorm.shape[0], XTestNorm.shape[1], 1, 1)
 
         yTrainCat = to_categorical(trainLabels, num_classes=2)  # adjust num_classes if needed
         yTestCat = to_categorical(testLabels, num_classes=2)
 
-        # 6. Train/test split
         X_train, X_test, y_train, y_test = XTrainCnn, XTestCnn, yTrainCat, yTestCat
 
-        # 3 layers, sparse categorical
-
         for i in range(1):
-            # Layers
+
             convModel = Sequential([
                 Conv2D(16, (3, 1), activation='relu', padding='same', input_shape=(XTrainCnn.shape[1], 1, 1)),
                 MaxPooling2D((2, 1)),
@@ -303,6 +291,16 @@ def studySecondTypeModels():
 
             convModel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
             history = convModel.fit(X_train, y_train, validation_split=0.2, epochs=30, batch_size=32)
+
+            # Evaluate on test set
+            testLoss, testAcc = convModel.evaluate(X_test, y_test)
+
+            print(f"\nTraining accuracy: {history.history['accuracy'][-1]:.4f}")
+            print(f"\nTraining loss: {history.history['loss'][-1]:.4f}")
+            print(f"\nTraining val accuracy: {history.history['val_accuracy'][-1]:.4f}")
+
+            print(f"\nTest accuracy: {testAcc:.4f}")
+            print(f"\nTest loss: {testLoss:.4f}")
 
             # Detailed classification report, Model prediction (testing)
             yPred = convModel.predict(X_test)
@@ -342,9 +340,6 @@ def studySecondTypeModels():
             resultSet.append(testAcc)
             countSet.append(count)
 
-            # Model params change
-            # first_layer += 10
-
             # Ui
             QApplication.processEvents()
 
@@ -359,35 +354,27 @@ def studyThirdTypeModels():
     else:
         modelType = "2D LSTM"
         # tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
-        # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
-
         infoSignal.progress.emit(f'Model: {modelType}, training started!')
 
         # Data preparation
         resultSet = []
         countSet = []
 
-        # 3. Normalize features
-        # trainFeatures, testFeatures, trainLabels, testLabels
         scaler = StandardScaler()
         XTrainNorm = scaler.fit_transform(trainFeatures)
         XTestNorm = scaler.fit_transform(testFeatures)
 
         # Reshape for CNN: (samples, height=num_frequencies, width=num_features, channels=1)
-        # If each sample has N features (num_columns), treat it as height=N, width=1
         XTrainCnn = XTrainNorm.reshape(XTrainNorm.shape[0], XTrainNorm.shape[1], 1)
         XTestCnn = XTestNorm.reshape(XTestNorm.shape[0], XTestNorm.shape[1], 1)
 
         yTrainCat = to_categorical(trainLabels, num_classes=2)  # adjust num_classes if needed
         yTestCat = to_categorical(testLabels, num_classes=2)
 
-        # 6. Train/test split
         X_train, X_test, y_train, y_test = XTrainCnn, XTestCnn, yTrainCat, yTestCat
 
-        # 3 layers, sparse categorical
-
         for i in range(1):
-            # Layers
+
             lstm2DModel = Sequential([
                 LSTM(64, input_shape=(XTrainCnn.shape[1], 1), return_sequences=True),
                 Dropout(0.3),
@@ -401,6 +388,16 @@ def studyThirdTypeModels():
             lstm2DModel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
             history = lstm2DModel.fit(X_train, y_train, validation_split=0.2, epochs=15, batch_size=32)
 
+            # Evaluate on test set
+            testLoss, testAcc = lstm2DModel.evaluate(X_test, y_test)
+
+            print(f"\nTraining accuracy: {history.history['accuracy'][-1]:.4f}")
+            print(f"\nTraining loss: {history.history['loss'][-1]:.4f}")
+            print(f"\nTraining val accuracy: {history.history['val_accuracy'][-1]:.4f}")
+
+            print(f"\nTest accuracy: {testAcc:.4f}")
+            print(f"\nTest loss: {testLoss:.4f}")
+
             # Detailed classification report, Model prediction (testing)
             yPred = lstm2DModel.predict(X_test)
             yPred = numpy.argmax(yPred, axis=1)  # Predicted classes
@@ -437,9 +434,6 @@ def studyThirdTypeModels():
 
             resultSet.append(testAcc)
             countSet.append(count)
-
-            # Model params change
-            # first_layer += 10
 
             # Ui
             QApplication.processEvents()
@@ -451,45 +445,36 @@ def studyThirdTypeModels():
 
 @QtCore.pyqtSlot()
 def studyFourthTypeModels():
-
     if checkStudyData == False:
         consoleOutput.insertPlainText("Відсутній один, або декілька необхідних для навчання наборів даних... \n")
     else:
         modelType = "2D LSTM"
         # tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
-        # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
-
         infoSignal.progress.emit(f'Model: {modelType}, training started!')
 
         # Data preparation
         resultSet = []
         countSet = []
 
-        # 3. Normalize features
-        # trainFeatures, testFeatures, trainLabels, testLabels
         scaler = StandardScaler()
         XTrainNorm = scaler.fit_transform(trainFeatures)
         XTestNorm = scaler.fit_transform(testFeatures)
 
         # Reshape for CNN: (samples, height=num_frequencies, width=num_features, channels=1)
-        # If each sample has N features (num_columns), treat it as height=N, width=1
         XTrainCnn = XTrainNorm.reshape(XTrainNorm.shape[0], XTrainNorm.shape[1], 1)
         XTestCnn = XTestNorm.reshape(XTestNorm.shape[0], XTestNorm.shape[1], 1)
 
         yTrainCat = to_categorical(trainLabels, num_classes=2)  # adjust num_classes if needed
         yTestCat = to_categorical(testLabels, num_classes=2)
 
-        # 6. Train/test split
         X_train, X_test, y_train, y_test = XTrainCnn, XTestCnn, yTrainCat, yTestCat
 
-        # 3 layers, sparse categorical
-
         for i in range(1):
-            # Layers
+
             lstm2DModel = Sequential([
-                LSTM(64, input_shape=(XTrainCnn.shape[1], 1), return_sequences=True),
+                LSTM(32, input_shape=(XTrainCnn.shape[1], 1), return_sequences=True),
                 Dropout(0.3),
-                LSTM(32),
+                LSTM(16),
                 Dropout(0.3),
                 Dense(64, activation='relu'),
                 Dropout(0.4),
@@ -497,7 +482,17 @@ def studyFourthTypeModels():
             ])
 
             lstm2DModel.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-            history = lstm2DModel.fit(X_train, y_train, validation_split=0.2, epochs=30, batch_size=32)
+            history = lstm2DModel.fit(X_train, y_train, validation_split=0.2, epochs=15, batch_size=32)
+
+            # Evaluate on test set
+            testLoss, testAcc = lstm2DModel.evaluate(X_test, y_test)
+
+            print(f"\nTraining accuracy: {history.history['accuracy'][-1]:.4f}")
+            print(f"\nTraining loss: {history.history['loss'][-1]:.4f}")
+            print(f"\nTraining val accuracy: {history.history['val_accuracy'][-1]:.4f}")
+
+            print(f"\nTest accuracy: {testAcc:.4f}")
+            print(f"\nTest loss: {testLoss:.4f}")
 
             # Detailed classification report, Model prediction (testing)
             yPred = lstm2DModel.predict(X_test)
@@ -535,9 +530,6 @@ def studyFourthTypeModels():
 
             resultSet.append(testAcc)
             countSet.append(count)
-
-            # Model params change
-            # first_layer += 10
 
             # Ui
             QApplication.processEvents()

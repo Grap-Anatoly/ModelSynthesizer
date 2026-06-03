@@ -83,19 +83,6 @@ def splitAudioFile(file_name, chunkLength, savePath, pBar, consoleOutput):
 # worksheets for saving data, link to console output)
 def processAudio(file_name, rangeStart, rangeEnd, pos, allyPointer, worksheetAmp, worksheetPh, consoleOutput):
 
-    # reading file
-    # sampFreq, sound = wavfile.read(file_name)
-    # # convert our sound (numpy) array to floating point values ranging from -1 to 1
-    # sound = sound / 2.0 ** 15
-    #
-    # # Check for 2 or 1 channels
-    # temp = sound[0]
-    # print(type(temp))
-    # if isinstance(temp, np.ndarray):
-    #     signal = sound[:, 0]
-    # else:
-    #     signal = sound
-
     signal, sampFreq = librosa.load(
         file_name,
         sr=None,
@@ -107,20 +94,10 @@ def processAudio(file_name, rangeStart, rangeEnd, pos, allyPointer, worksheetAmp
     length_in_s = signal.shape[0] / sampFreq
     print("Sighnal lenght: ", length_in_s, "s")
 
-    # Obtaining the proper frequency units
-    # fft_spectrum = np.fft.rfft(signal)
-    #
-    # freq = np.fft.rfftfreq(signal.size, d=1. / sampFreq)
-    # phase = np.angle(fft_spectrum)
-    # magnitude = np.abs(fft_spectrum)  # magnitude spectrum
-    # fft_spectrum_abs = np.abs(fft_spectrum)
-
     # FFT using librosa
     fft_spectrum = librosa.stft(signal, n_fft=len(signal), hop_length=len(signal) + 1)
-
     # Convert 2D STFT result to 1D
     fft_spectrum = fft_spectrum[:, 0]
-
     # Frequencies
     freq = librosa.fft_frequencies(sr=sampFreq, n_fft=len(signal))
 
@@ -167,8 +144,6 @@ def processAudio(file_name, rangeStart, rangeEnd, pos, allyPointer, worksheetAmp
             # print('frequency = {} Hz with amplitude {} '.format(np.round(freq[i], 1), format(f)))
             # print('frequency = {} Hz with phase {} '.format(np.round(freq[i], 1), phase[i]))
 
-    """Add additional sound data"""
-
     # Pitch
     peakIdx = np.argmax(amplitude)
     pitchFreq = frequency[peakIdx]
@@ -192,6 +167,62 @@ def processAudio(file_name, rangeStart, rangeEnd, pos, allyPointer, worksheetAmp
         print(f"{k}: {v:.2f}")
 
     exportData(file_name, dataDict, phaseDict, pitchFreq, descriptors, pos, allyPointer, worksheetAmp, worksheetPh)
+
+def processAudioNpy(file_name, rangeStart, rangeEnd, pos, allyPointer, consoleOutput):
+
+    signal, sr = librosa.load(
+        file_name,
+        sr=None,
+        mono=True
+    )
+
+    fft_spectrum = librosa.stft(
+        signal,
+        n_fft=len(signal),
+        hop_length=len(signal) + 1
+    )
+
+    fft_spectrum = fft_spectrum[:, 0]
+
+    freq = librosa.fft_frequencies(
+        sr=sr,
+        n_fft=len(signal)
+    )
+
+    phase = np.angle(fft_spectrum)
+    magnitude = np.abs(fft_spectrum)
+
+    amp_features = []
+    # phase_features = []
+
+    print(len(magnitude))
+    print(rangeEnd)
+
+    for i in range(min(rangeEnd, len(magnitude))):
+        amp_features.append(magnitude[i])
+        # phase_features.append(phase[i])
+
+    frequency = freq[:rangeEnd]
+    amplitude = magnitude[:rangeEnd]
+
+    descriptors = timbreDescriptors(
+        frequency,
+        amplitude
+    )
+
+    peakIdx = np.argmax(amplitude)
+    pitchFreq = frequency[peakIdx]
+
+    descriptor_values = list(descriptors.values())
+
+    feature_vector = np.concatenate([
+        amp_features,
+        # phase_features,
+        [pitchFreq],
+        descriptor_values
+    ])
+
+    return feature_vector, allyPointer
 
 
 # Output into Excel ------------------------------------------------------------------------------------------------
@@ -325,6 +356,39 @@ def processFiles(filesFolder, filesList, allyPointer, rangeStart, rangeEnd, save
             pass
 
     workbook.close()
+
+def processFilesNpy(filesFolder, filesList, allyPointer, rangeStart, rangeEnd, savePath, pBar, consoleOutput):
+
+    pBar.setMaximum(len(filesList))
+
+    X = []
+    Y = []
+
+    for i in range(len(filesList)):
+        fileName = filesFolder + filesList[i]
+        print(fileName)
+        if fileName.endswith(".wav"):
+            consoleOutput.insertPlainText(f"{fileName}\n")
+            x, y = processAudioNpy(fileName, rangeStart, rangeEnd, i + 1, allyPointer, consoleOutput)
+            X.append(x)
+            Y.append(y)
+            pBar.setValue(i + 1)
+            QApplication.processEvents()
+        else:
+            pass
+
+    X = np.array(X, dtype=np.float32)
+    Y = np.array(Y)
+
+    print(X)
+    print(Y)
+    print("Npy processed")
+
+    cleanPath = filesFolder.rstrip("/")
+    name = cleanPath.rsplit("/", 1)[-1]
+
+    np.save(f"{savePath}/X_{name}.npy", X)
+    np.save(f"{savePath}/y_{name}.npy", Y)
 
 # Util --------------------------------------------------------------------------------------------------------------
 

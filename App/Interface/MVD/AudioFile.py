@@ -40,6 +40,7 @@ class FileProcessionWindow(QMainWindow):
         tabs = QTabWidget()
         tabs.addTab(self.initialFileProcessionTab(), "Розбиття початкового файлу")
         tabs.addTab(self.numericalDataProcessionTab(), "Отримання числових даних")
+        tabs.addTab(self.numericalDataNpyProcessionTab(), "Отримання числових даних (.Npy)")
         tabs.addTab(self.dataSetProcessionTab(), "Формування первинного опису")
 
         self.consoleOutput = QPlainTextEdit()
@@ -202,6 +203,67 @@ class FileProcessionWindow(QMainWindow):
         audioTab.setLayout(layout)
         return audioTab
 
+    def numericalDataNpyProcessionTab(self):
+        audioTabNpy = QWidget()
+        layout = QGridLayout()
+
+        self.folderPathLabelNpy = QLineEdit(self)
+        self.folderPathLabelNpy.setPlaceholderText("Шлях до папки з звуковими файлами...")
+        self.folderPathLabelNpy.setAlignment(QtCore.Qt.AlignLeft)
+        self.folderPathLabelNpy.setReadOnly(True)
+
+        self.rangeInfoNpy = QLabel(self)
+        self.rangeInfoNpy.setText("Введіть діапазон виведення даних, через кому, Гц")
+        self.rangeInfoNpy.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.rangeStartTextboxNpy = QLineEdit(self)
+        self.rangeStartTextboxNpy.setText("16")
+
+        self.rangeEndTextboxNpy = QLineEdit(self)
+        self.rangeEndTextboxNpy.setText("350")
+
+        self.rangeLabelNpy = QLabel()
+        self.rangeLabelNpy.setText("--------")
+
+        self.allyInfoNpy = QLabel(self)
+        self.allyInfoNpy.setText("Введіть 'свій або чужий', 100/0 ")
+        self.allyInfoNpy.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.allyTextboxNpy = QLineEdit(self)
+        self.allyTextboxNpy.setText("100")
+        self.allyTextboxNpy.setAlignment(QtCore.Qt.AlignLeft)
+
+        self.allyLabelNpy = QLabel()
+        self.allyLabelNpy.setText("--------")
+
+        self.numericalPBarNpy = QProgressBar(self)
+        self.numericalPBarNpy.setAlignment(QtCore.Qt.AlignCenter)
+        self.numericalPBarNpy.setStyleSheet("QProgressBar"
+                                         "{"
+                                         "background-color : white;"
+                                         "border : 1px solid grey;"
+                                         "}")
+
+        layout.addWidget(QPushButton("Інформація по процесу", clicked=self.showNpyWindowInfo), 0, 0, 1, 3)
+        layout.addWidget(QPushButton("Обрати папку", clicked=self.getFilesFolderPathNpy), 1, 0)
+        layout.addWidget(self.folderPathLabelNpy, 1, 1, 1, 2)
+
+        layout.addWidget(self.rangeInfoNpy, 2, 0, 1, 3)
+        layout.addWidget(QPushButton('Ввести', clicked=self.enterRangeNpy), 3, 0)
+        layout.addWidget(self.rangeStartTextboxNpy, 3, 1)
+        layout.addWidget(self.rangeEndTextboxNpy, 3, 2)
+
+        layout.addWidget(self.allyInfoNpy, 4, 0, 1, 3)
+        layout.addWidget(QPushButton('Ввести', clicked=self.enterPointerNpy), 5, 0)
+        layout.addWidget(self.allyTextboxNpy, 5, 1, 1, 2)
+
+        # layout.addWidget(QPushButton("Перетворити", clicked=self.longRunProcessFiles), 6, 0, 1, 3)
+        layout.addWidget(QPushButton("Перетворити", clicked=self.processAudioFilesNpy), 6, 0, 1, 3)
+        layout.addWidget(self.numericalPBarNpy, 7, 0, 1, 3)
+
+        audioTabNpy.setLayout(layout)
+        return audioTabNpy
+
     def dataSetProcessionTab(self):
         excelTab = QWidget()
         layout = QGridLayout()
@@ -308,6 +370,25 @@ class FileProcessionWindow(QMainWindow):
 
         returnValue = self.infoBox.exec()
 
+    def showNpyWindowInfo(self):
+        self.infoBox = QMessageBox()
+        self.infoBox.setIcon(QMessageBox.Information)
+        self.infoBox.setWindowTitle("Інформація")
+        self.infoBox.setText("Процес перетворення аудіофайлу в числові дані (Формат .Npy).\n"
+                             "1.Вкажіть шлях до аудіофайлів для перетворення;\n"
+                             "2.Вкажіть частотний діапазон\n"
+                             "в якому будуть виведені числові дані\n"
+                             "(Діапазон людського слуху 16 - 20000 гц);\n"
+                             "3.Додайте вказівник свій/чужий,\n"
+                             "де свій це 100 а чужий, 0;\n"
+                             "4.Оберіть місце для збереження файлу і\n"
+                             "натисніть на кнопку 'Перетворити'.\n"
+                             "(Для комфортної подальшої роботи\n"
+                             "рекомендується створити окрему папку для файлів)")
+        self.infoBox.setStandardButtons(QMessageBox.Close)
+
+        returnValue = self.infoBox.exec()
+
     # Folder Tree Output -------------------------------------------------------------------------------------------
 
     def getOutherTree(self, path):
@@ -345,6 +426,18 @@ class FileProcessionWindow(QMainWindow):
             print(file)
 
             self.folderPathLabel.setText(file + '/')
+
+            self.getInnerTree(file)
+            self.consoleOutput.insertPlainText("Шлях обрано... \n")
+
+    def getFilesFolderPathNpy(self):
+        file = QFileDialog.getExistingDirectory(self, "Оберіть папку")
+
+        # return files
+        if file:
+            print(file)
+
+            self.folderPathLabelNpy.setText(file + '/')
 
             self.getInnerTree(file)
             self.consoleOutput.insertPlainText("Шлях обрано... \n")
@@ -388,6 +481,7 @@ class FileProcessionWindow(QMainWindow):
         else:
             self.consoleOutput.insertPlainText("Довжина відрізку не може бути меншою за 0мс")
 
+
     def enterRange(self):
 
         textboxStartValue = self.rangeStartTextbox.text()
@@ -404,6 +498,23 @@ class FileProcessionWindow(QMainWindow):
             self.consoleOutput.insertPlainText("Початок і кінець діапазону не можуть бути меншими за 0! \n")
             self.rangeLabel.setText("Error")
 
+    def enterRangeNpy(self):
+
+        textboxStartValueNpy = self.rangeStartTextboxNpy.text()
+        textboxEndValueNpy = self.rangeEndTextboxNpy.text()
+
+        if int(textboxStartValueNpy) > 0 and int(textboxEndValueNpy) > 0:
+            if int(textboxStartValueNpy) > int(textboxEndValueNpy):
+                self.consoleOutput.insertPlainText("Початок діапазону не може бути більшим за кінець! \n")
+                self.rangeLabelNpy.setText("Error")
+            else:
+                self.rangeLabelNpy.setText(textboxStartValueNpy + " / " + textboxEndValueNpy)
+                self.consoleOutput.insertPlainText("Діапазон вказано... \n")
+        else:
+            self.consoleOutput.insertPlainText("Початок і кінець діапазону не можуть бути меншими за 0! \n")
+            self.rangeLabelNpy.setText("Error")
+
+
     def enterPointer(self):
         textboxValue = self.allyTextbox.text()
 
@@ -412,6 +523,15 @@ class FileProcessionWindow(QMainWindow):
             self.consoleOutput.insertPlainText("Вказівник додано... \n")
         else:
             self.allyLabel.setText("Вказівник не повинен виходити за встановлені межі")
+
+    def enterPointerNpy(self):
+        textboxValue = self.allyTextboxNpy.text()
+
+        if int(textboxValue) > -1 and int(textboxValue) < 101:
+            self.allyLabelNpy.setText(textboxValue)
+            self.consoleOutput.insertPlainText("Вказівник додано... \n")
+        else:
+            self.allyLabelNpy.setText("Вказівник не повинен виходити за встановлені межі")
 
     # Final processing -----------------------------------------------------------------------------------------------
 
@@ -464,6 +584,8 @@ class FileProcessionWindow(QMainWindow):
                 self.getOutherTree(filePath)
             else:
                 self.consoleOutput.insertPlainText("Некоректний формат файлу. \n")
+
+
     def processAudioFiles(self):
         self.consoleOutput.insertPlainText("Іде обробка... \n")
 
@@ -491,6 +613,41 @@ class FileProcessionWindow(QMainWindow):
                 self.folderPathLabel.setText("Шлях до папки з звуковими файлами...")
                 self.rangeLabel.setText("--------")
                 self.allyLabel.setText("--------")
+
+                self.getOutherTree(filePath)
+            else:
+                self.consoleOutput.insertPlainText("Некоректний формат файлів для обробки! \n")
+        else:
+            self.consoleOutput.insertPlainText("Некоректний формат файлів для обробки! \n")
+
+
+    def processAudioFilesNpy(self):
+        self.consoleOutput.insertPlainText("Іде обробка... \n")
+
+        filePath = QFileDialog.getExistingDirectory(self, "Оберіть папку для збереження результату")
+
+        if filePath:
+
+            filePath = filePath + "/"
+
+            if self.folderPathLabelNpy.text() != "Шлях до папки з звуковими файлами..." and \
+                    self.allyLabelNpy.text() != "--------":
+
+                filesList = [f for f in listdir(self.folderPathLabelNpy.text()) if
+                             isfile(join(self.folderPathLabelNpy.text(), f))]
+                filesList = natsort.natsorted(filesList)
+
+                rangeStart, rangeEnd = self.rangeLabelNpy.text().split(" / ")
+
+                Processing.processFilesNpy(self.folderPathLabelNpy.text(), filesList, int(self.allyLabelNpy.text()),
+                                           int(rangeStart), int(rangeEnd), filePath,
+                                           self.numericalPBar, self.consoleOutput)
+
+                self.consoleOutput.insertPlainText("Файли оброблено! \n")
+
+                self.folderPathLabelNpy.setText("Шлях до папки з звуковими файлами...")
+                self.rangeLabelNpy.setText("--------")
+                self.allyLabelNpy.setText("--------")
 
                 self.getOutherTree(filePath)
             else:

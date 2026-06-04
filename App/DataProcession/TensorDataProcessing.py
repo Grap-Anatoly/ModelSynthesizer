@@ -82,6 +82,44 @@ def createCombinedDataSet(filesPath, fileName, savePath, pBar):
     with pd.ExcelWriter(f'{savePath + fileName}.xlsx') as writer:
         combined.to_excel(writer, sheet_name='Комб', index=False)
 
+def createNpyDataSet(filesPath, fileName, savePath, pBar):
+    path = filesPath
+    files = os.listdir(path)
+
+    QApplication.processEvents()
+    X_list = []
+    y_list = []
+
+    for file in sorted(os.listdir(path)):
+
+        full_path = os.path.join(path, file)
+
+        if file.startswith("X") and file.endswith(".npy"):
+            X_list.append(numpy.load(full_path))
+
+        elif file.startswith("y") and file.endswith(".npy"):
+            y_list.append(numpy.load(full_path))
+
+    feature_count = X_list[0].shape[1]
+
+    for dataset in X_list:
+
+        if dataset.shape[1] != feature_count:
+            raise ValueError(
+                f"Feature mismatch: "
+                f"{dataset.shape[1]} != {feature_count}"
+            )
+
+    X = numpy.concatenate(X_list, axis=0)
+    y = numpy.concatenate(y_list, axis=0)
+
+    numpy.save(os.path.join(savePath, f"X_{fileName}.npy"), X)
+    numpy.save(os.path.join(savePath, f"y_{fileName}.npy"), y)
+
+    pBar.setValue(100)
+
+    print("Combined X:", X.shape)
+    print("Combined y:", y.shape)
 
 # --------------------------------------------------
 def getMultipleSheetDataSet(fileName):

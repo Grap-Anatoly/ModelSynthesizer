@@ -136,6 +136,7 @@ class StudyDataWindow(QMainWindow):
         self.layout.addWidget(QPushButton("Обрати файл з вказівниками (Y)", self, clicked=self.getNpyYFilePath))
         self.layout.addWidget(self.npyYDataLabel)
         self.layout.addWidget(QPushButton("Завантажити дані", self, clicked=self.loadNpyData))
+        self.layout.addWidget(QPushButton("Переглянути дані в .Npy файлі", self, clicked=self.previewNpyDataset))
 
         widget = QWidget()
         widget.setContentsMargins(-1, -1, -1, 0)
@@ -320,7 +321,6 @@ class StudyDataWindow(QMainWindow):
                 self.excelTable.setItem(row, col, QTableWidgetItem(str(v)))
                 col += 1
             row += 1
-
 
     """
         Get selected data: load sheet, get rows and cols data, get y pointer, fill features and lable lists and export
@@ -691,3 +691,63 @@ class StudyDataWindow(QMainWindow):
             elif self.sender() == self.secondTestCheckbox:
                 self.secondDataSplitCheckbox.setChecked(False)
                 self.secondStudyCheckbox.setChecked(False)
+
+    def previewNpyDataset(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Dataset", "", "NumPy files (*.npy)")
+
+        if not file_path:
+            return
+
+        self.previewWindow = NpyPreviewWindow(file_path)
+        self.previewWindow.show()
+
+class NpyPreviewWindow(QDialog):
+
+    def __init__(self, npy_path, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("NPY Preview")
+        self.resize(1000, 600)
+
+        layout = QVBoxLayout()
+
+        self.infoLabel = QLabel()
+
+        self.table = QTableWidget()
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+        layout.addWidget(self.table)
+        layout.addWidget(self.infoLabel)
+
+        self.setLayout(layout)
+        self.load_npy(npy_path)
+
+    def load_npy(self, npy_path):
+
+        data = np.load(npy_path)
+
+        if len(data.shape) == 1:
+            data = data.reshape(-1, 1)
+
+        # rows = min(data.shape[0], 200)
+        # cols = data.shape[1]
+
+        rows = min(data.shape[0], 1000)
+        cols = min(data.shape[1], 5000)
+
+        self.table.setRowCount(rows)
+        self.table.setColumnCount(cols)
+
+        self.infoLabel.setText(
+            f"Shape: {data.shape} | "
+            f"Type: {data.dtype} | "
+            f"Showing first {min(data.shape[0], 1000)} rows"
+        )
+
+        for r in range(rows):
+            for c in range(cols):
+                self.table.setItem(
+                    r,
+                    c,
+                    QTableWidgetItem(str(data[r, c]))
+                )

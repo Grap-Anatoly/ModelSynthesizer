@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, \
 
 # Additional Classes
 from App.DataProcession import Processing, TensorDataProcessing
+from App.Interface.ExcelDataImport import NpyPreviewWindow
 
 # Folders name sorting
 import natsort
@@ -289,17 +290,24 @@ class FileProcessionWindow(QMainWindow):
                                   "border : 1px solid grey;"
                                   "}")
 
+        self.npyCheckBox = QCheckBox('Файл формату .Npy', self)
+
         layout.addWidget(QPushButton("Інформація по процесу", clicked=self.showThirdWindowInfo), 0, 0, 1, 2)
         layout.addWidget(QPushButton("Обрати шлях", clicked=self.getExcelFilesFolderPath), 1, 0)
         layout.addWidget(self.dataFolderPathLabel, 1, 1)
+        layout.addWidget(QPushButton("Переглянути дані в .Npy файлі", clicked=self.previewNpyDataset), 2, 0, 1, 2)
 
-        layout.addWidget(self.fileNameInfo, 2, 0, 1, 2)
-        layout.addWidget(self.fileNameBox, 3, 0, 1, 2)
+        layout.addWidget(self.fileNameInfo, 3, 0, 1, 2)
+        layout.addWidget(self.fileNameBox, 4, 0, 1, 2)
+        layout.addWidget(self.npyCheckBox, 5, 0,)
 
         layout.addWidget(
-            QPushButton("Сформувати первинний опис (Амп і фаза окремо)", clicked=self.createDataSet), 4, 0, 1, 2)
-        layout.addWidget(
-            QPushButton("Сформувати первинний опис (Амп і фаза разом)", clicked=self.createCombinedDataSet), 5, 0, 1, 2)
+            QPushButton("Сформувати МВД", clicked=self.createDataSet), 5, 1)
+
+        # layout.addWidget(
+        #     QPushButton("Сформувати первинний опис (Амп і фаза окремо)", clicked=self.createDataSet), 4, 0, 1, 2)
+        # layout.addWidget(
+        #     QPushButton("Сформувати первинний опис (Амп і фаза разом)", clicked=self.createCombinedDataSet), 5, 0, 1, 2)
 
         layout.addWidget(self.dsPBar, 6, 0, 1, 2)
 
@@ -443,6 +451,11 @@ class FileProcessionWindow(QMainWindow):
             self.consoleOutput.insertPlainText("Шлях обрано... \n")
 
     def getExcelFilesFolderPath(self):
+
+        # options = QFileDialog.Options()
+        # options |= QFileDialog.DontUseNativeDialog
+        #
+        # file = QFileDialog.getExistingDirectory(self, "Оберіть папку", options=options)
         file = QFileDialog.getExistingDirectory(self, "Оберіть папку")
 
         # return files
@@ -664,8 +677,12 @@ class FileProcessionWindow(QMainWindow):
 
             filePath = filePath + "/"
 
-            TensorDataProcessing.createDataSet(self.dataFolderPathLabel.text(), self.fileNameBox.text(),
-                                               filePath, self.dsPBar)
+            if self.npyCheckBox.isChecked() == False:
+                TensorDataProcessing.createDataSet(self.dataFolderPathLabel.text(), self.fileNameBox.text(),
+                                                   filePath, self.dsPBar)
+            else:
+                TensorDataProcessing.createNpyDataSet(self.dataFolderPathLabel.text(), self.fileNameBox.text(),
+                                                   filePath, self.dsPBar)
 
             self.consoleOutput.insertPlainText("Набір даних створено! \n")
 
@@ -690,4 +707,13 @@ class FileProcessionWindow(QMainWindow):
             self.dataFolderPathLabel.setText("Шлях до файлів для об`єднання...")
         else:
             self.consoleOutput.insertPlainText("Некоректний формат файлів для обробки! \n")
+
+    def previewNpyDataset(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Dataset", "", "NumPy files (*.npy)")
+
+        if not file_path:
+            return
+
+        self.previewWindow = NpyPreviewWindow(file_path)
+        self.previewWindow.show()
 

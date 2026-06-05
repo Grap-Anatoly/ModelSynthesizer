@@ -448,7 +448,7 @@ def studyFourthTypeModels():
     if checkStudyData == False:
         consoleOutput.insertPlainText("Відсутній один, або декілька необхідних для навчання наборів даних... \n")
     else:
-        modelType = "2D LSTM"
+        modelType = "2D LSTM (Smaller dimmensions)"
         # tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
         infoSignal.progress.emit(f'Model: {modelType}, training started!')
 
@@ -473,11 +473,12 @@ def studyFourthTypeModels():
 
             lstm2DModel = Sequential([
                 LSTM(32, input_shape=(XTrainCnn.shape[1], 1), return_sequences=True),
-                Dropout(0.3),
+                Dropout(0.2),
                 LSTM(16),
+                Dropout(0.2),
+                # Dense(64, activation='relu'),
+                Dense(32, activation='relu'),
                 Dropout(0.3),
-                Dense(64, activation='relu'),
-                Dropout(0.4),
                 Dense(2, activation='softmax')
             ])
 

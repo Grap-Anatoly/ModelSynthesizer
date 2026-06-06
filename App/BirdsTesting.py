@@ -617,7 +617,7 @@ if __name__ == '__main__':
     - ZCR
     """
 
-    model = Sequential([
+    modelConv = Sequential([
         Conv1D(64, 5, activation='relu', input_shape=(CHUNK_SIZE, 3)),
         MaxPooling1D(2),
         Conv1D(64, 5, activation='relu'),
@@ -630,7 +630,7 @@ if __name__ == '__main__':
 
     """Spectrogram"""
 
-    # model = Sequential([
+    # modelSpectrogram = Sequential([
     #     Conv2D(32, (3, 3), activation='relu', input_shape=(X_train.shape[1], X_train.shape[2], 1)),
     #     MaxPooling2D((2, 2)),
     #     Conv2D(64, (3, 3), activation='relu'),
@@ -649,10 +649,9 @@ if __name__ == '__main__':
     """
 
     # model = Sequential([
-    #
     #     Conv2D(32, (3, 3), activation='relu',
     #            input_shape=(X_train.shape[1], X_train.shape[2], 1)),
-    #     # keras.layers.BatchNormalization(),
+    #     keras.layers.BatchNormalization(),
     #     MaxPooling2D((2, 2)),
     #     Conv2D(64, (3, 3), activation='relu'),
     #     MaxPooling2D((2, 2)),
@@ -664,24 +663,25 @@ if __name__ == '__main__':
     #     Dense(len(np.unique(y_train)), activation='softmax')
     # ])
 
-    # model = Sequential([
-    #     Conv1D(32, 5, activation='relu', kernel_regularizer=regularizers.l2(0.001), input_shape=(CHUNK_SIZE, 1)),
-    #     MaxPooling1D(2),
-    #     keras.layers.Dropout(0.3),
-    #     # Block 2
-    #     Conv1D(64, 5, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-    #     MaxPooling1D(2),
-    #     keras.layers.Dropout(0.3),
-    #     # Block 3 (optional deeper feature extraction)
-    #     Conv1D(128, 3, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-    #     MaxPooling1D(2),
-    #     keras.layers.Dropout(0.4),
-    #     # Classifier head
-    #     Flatten(),
-    #     Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-    #     keras.layers.Dropout(0.5),
-    #     Dense(len(np.unique(y_train)), activation='softmax')
-    # ])
+    model = Sequential([
+        # Conv1D(32, 5, activation='relu', kernel_regularizer=regularizers.l2(0.001), input_shape=(CHUNK_SIZE, 1)),
+        Conv1D(32, 5, activation='relu', kernel_regularizer=regularizers.l2(0.001), input_shape=(CHUNK_SIZE, 3)),
+        MaxPooling1D(2),
+        keras.layers.Dropout(0.1),
+        # Block 2
+        Conv1D(64, 5, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+        MaxPooling1D(2),
+        keras.layers.Dropout(0.1),
+        # Block 3 (optional deeper feature extraction)
+        Conv1D(128, 3, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+        MaxPooling1D(2),
+        keras.layers.Dropout(0.2),
+        # Classifier head
+        Flatten(),
+        Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+        keras.layers.Dropout(0.3),
+        Dense(len(np.unique(y_train)), activation='softmax')
+    ])
 
     model.compile(
         optimizer='Adam',

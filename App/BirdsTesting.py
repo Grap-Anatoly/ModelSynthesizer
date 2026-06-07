@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras.layers import Conv1D, MaxPooling1D, Conv2D, MaxPooling2D, Flatten, Dense, LSTM
 from keras import regularizers, callbacks
+import BirdsModels
 
 if __name__ == '__main__':
     # =========================
@@ -369,6 +370,16 @@ if __name__ == '__main__':
 
     def normalize_feature(f):
         return (f - np.mean(f)) / (np.std(f) + 1e-8)
+
+
+    def downsample_sequence(data, factor=10):
+        # data shape: (samples, time, features)
+        samples, time_steps, feat = data.shape
+        new_length = time_steps // factor
+        # Trim to a multiple of factor
+        trimmed = data[:, :new_length * factor, :]
+        # Reshape and mean over the factor dimension
+        return trimmed.reshape(samples, new_length, factor, feat).mean(axis=2)
     # =========================
     # PROCESS DATASET
     # =========================
@@ -499,12 +510,17 @@ if __name__ == '__main__':
     # X_train = X_train / (np.max(np.abs(X_train), axis=1, keepdims=True) + 1e-8)
     # X_val = X_val / (np.max(np.abs(X_val), axis=1, keepdims=True) + 1e-8)
     # X_test = X_test / (np.max(np.abs(X_test), axis=1, keepdims=True) + 1e-8)
-    #
+
+
     # For spectrogram
     X_train, y_train, X_val, y_val, X_test, y_test = process_dataset_split(DATASET_PATH)
     print("X_train shape:", X_train.shape)
     print("X_val shape:", X_val.shape)
     print("X_test shape:", X_test.shape)
+
+    X_train_ds = downsample_sequence(X_train, factor=10)  # (665, 6615, 3)
+    X_val_ds = downsample_sequence(X_val, factor=10)
+    X_test_ds = downsample_sequence(X_test, factor=10)
 
     # Encode labels
     le = LabelEncoder()
@@ -513,6 +529,8 @@ if __name__ == '__main__':
     y_train = le.fit_transform(y_train)
     y_val = le.transform(y_val)
     y_test = le.transform(y_test)
+
+    print(len(np.unique(y_train)))
 
     # plot_spectrogram_grid(
     #     X_train,
@@ -617,14 +635,13 @@ if __name__ == '__main__':
     - ZCR
     """
 
-    modelConv = Sequential([
+    modelConv70 = Sequential([
         Conv1D(64, 5, activation='relu', input_shape=(CHUNK_SIZE, 3)),
         MaxPooling1D(2),
-        Conv1D(64, 5, activation='relu'),
+        Conv1D(32, 5, activation='relu'),
         MaxPooling1D(2),
         keras.layers.Dropout(0.2),
         keras.layers.GlobalAveragePooling1D(),
-        Dense(64, activation='relu'),
         Dense(len(np.unique(y_train)), activation='softmax')
     ])
 
@@ -663,7 +680,7 @@ if __name__ == '__main__':
     #     Dense(len(np.unique(y_train)), activation='softmax')
     # ])
 
-    model = Sequential([
+    modelConv = Sequential([
         # Conv1D(32, 5, activation='relu', kernel_regularizer=regularizers.l2(0.001), input_shape=(CHUNK_SIZE, 1)),
         Conv1D(32, 5, activation='relu', kernel_regularizer=regularizers.l2(0.001), input_shape=(CHUNK_SIZE, 3)),
         MaxPooling1D(2),
@@ -682,6 +699,41 @@ if __name__ == '__main__':
         keras.layers.Dropout(0.3),
         Dense(len(np.unique(y_train)), activation='softmax')
     ])
+
+    """
+    70% on 10-9 epochs - Good one
+    - Amp
+    - RMS
+    - ZCR
+    """
+
+    modelSeveralDenseBlocks = Sequential([
+        keras.layers.Input(shape=(CHUNK_SIZE, 3)),
+        # First dense block
+        keras.layers.Dense(64, activation='relu'),
+        keras.layers.BatchNormalization(),
+        keras.layers.Dropout(0.2),
+        # Second dense block
+        keras.layers.Dense(32, activation='relu'),
+        keras.layers.BatchNormalization(),
+        keras.layers.Dropout(0.2),
+        # Third dense block
+        keras.layers.Dense(16, activation='relu'),
+        keras.layers.BatchNormalization(),
+        keras.layers.Dropout(0.1),
+        keras.layers.GlobalAveragePooling1D(),
+        # Output layer
+        keras.layers.Dense(len(np.unique(y_train)), activation='softmax')
+    ])
+
+    """
+    70% on 5 epochs - Good one
+    - Amp
+    - RMS
+    - ZCR
+    """
+
+    model = BirdsModels.build_model((CHUNK_SIZE, 3), len(np.unique(y_train)))
 
     model.compile(
         optimizer='Adam',
@@ -703,7 +755,7 @@ if __name__ == '__main__':
     model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=20,
+        epochs=5,
         batch_size=32,
         shuffle=True,
         callbacks=[early_stop]
@@ -746,5 +798,7 @@ if __name__ == '__main__':
     # print(y_pred)
     #
     # print(classification_report(y_test, y_pred_classes))
+
+
 
 

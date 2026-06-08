@@ -733,7 +733,29 @@ if __name__ == '__main__':
     - ZCR
     """
 
-    model = BirdsModels.build_model((CHUNK_SIZE, 3), len(np.unique(y_train)))
+    modelCnn = BirdsModels.build_Cnn_model((CHUNK_SIZE, 3), len(np.unique(y_train)))
+
+    """
+    Bad
+    """
+    modelCnnLSTM = BirdsModels.build_cnn_lstm((CHUNK_SIZE, 3), len(np.unique(y_train)))
+
+    model = Sequential([
+        Conv1D(64, 7, activation='relu', input_shape=(CHUNK_SIZE, 3)),
+        MaxPooling1D(8),
+        Conv1D(128, 5, activation='relu'),
+        MaxPooling1D(8),
+        keras.layers.Bidirectional(LSTM(64, return_sequences=False)),
+        Dense(256, activation='relu'),
+        keras.layers.Dropout(0.3),
+        Dense(len(np.unique(y_train)), activation='softmax')
+    ])
+
+    model.compile(
+        optimizer='adam',
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
 
     model.compile(
         optimizer='Adam',
@@ -755,7 +777,7 @@ if __name__ == '__main__':
     model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=5,
+        epochs=25,
         batch_size=32,
         shuffle=True,
         callbacks=[early_stop]

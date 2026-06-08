@@ -21,7 +21,7 @@ def residual_block(x, filters, kernel_size, stride=1):
     return x
 
 
-def build_model(input_shape, num_classes):
+def build_Cnn_model(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)  # (6615, 3)
 
     # Initial stem: reduce temporal length quickly
@@ -41,6 +41,37 @@ def build_model(input_shape, num_classes):
 
     # Classifier head with heavy dropout
     x = keras.layers.Dropout(0.5)(x)
+    x = keras.layers.Dense(64, activation='relu')(x)
+    x = keras.layers.Dropout(0.3)(x)
+    outputs = keras.layers.Dense(num_classes, activation='softmax')(x)
+
+    model = keras.Model(inputs, outputs)
+    return model
+
+
+def build_cnn_lstm(input_shape, num_classes):
+    inputs = keras.Input(shape=input_shape)
+
+    x = keras.layers.Conv1D(32, kernel_size=5, strides=2, padding='same')(inputs)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.ReLU()(x)
+
+    x = keras.layers.Conv1D(64, kernel_size=5, strides=4, padding='same')(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.ReLU()(x)  # shape: (?, 827, 128)
+
+    x = keras.layers.Conv1D(128, kernel_size=3, strides=4, padding='same')(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.ReLU()(x)  # shape: (?, 207, 256)
+
+    x = keras.layers.Conv1D(64, kernel_size=3, strides=1, padding='same')(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.ReLU()(x)  # (?, 207, 128)
+
+    x = keras.layers.LSTM(64, return_sequences=False, dropout=0.3, recurrent_dropout=0.3)(x)
+
+    # Classifier
+    x = keras.layers.Dropout(0.4)(x)
     x = keras.layers.Dense(64, activation='relu')(x)
     x = keras.layers.Dropout(0.3)(x)
     outputs = keras.layers.Dense(num_classes, activation='softmax')(x)

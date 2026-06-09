@@ -47,7 +47,7 @@ if __name__ == '__main__':
     CHUNK_DURATION = 3.0  # seconds
     # CHUNK_DURATION = 1.5  # seconds
     CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
-    MAX_FILES_PER_CLASS = 20
+    MAX_FILES_PER_CLASS = 30
 
     # =========================
     # PLOTS
@@ -511,16 +511,18 @@ if __name__ == '__main__':
     # X_val = X_val / (np.max(np.abs(X_val), axis=1, keepdims=True) + 1e-8)
     # X_test = X_test / (np.max(np.abs(X_test), axis=1, keepdims=True) + 1e-8)
 
-
-    # For spectrogram
     X_train, y_train, X_val, y_val, X_test, y_test = process_dataset_split(DATASET_PATH)
     print("X_train shape:", X_train.shape)
     print("X_val shape:", X_val.shape)
     print("X_test shape:", X_test.shape)
 
-    X_train_ds = downsample_sequence(X_train, factor=10)  # (665, 6615, 3)
-    X_val_ds = downsample_sequence(X_val, factor=10)
-    X_test_ds = downsample_sequence(X_test, factor=10)
+    #Downsampling 60k > 600 steps
+    # X_train = downsample_sequence(X_train, factor=10)  # (665, 6615, 3)
+    # X_val = downsample_sequence(X_val, factor=10)
+    # X_test = downsample_sequence(X_test, factor=10)
+    # print("X_train shape:", X_train.shape)
+    # print("X_val shape:", X_val.shape)
+    # print("X_test shape:", X_test.shape)
 
     # Encode labels
     le = LabelEncoder()
@@ -727,20 +729,20 @@ if __name__ == '__main__':
     ])
 
     """
-    70% on 5 epochs - Good one
+    70% on 6 epochs - Good one
     - Amp
     - RMS
     - ZCR
     """
 
-    modelCnn = BirdsModels.build_Cnn_model((CHUNK_SIZE, 3), len(np.unique(y_train)))
+    modelCnn = BirdsModels.build_Cnn_model((X_train.shape[1], 3), len(np.unique(y_train)))
 
     """
     Bad
     """
     modelCnnLSTM = BirdsModels.build_cnn_lstm((CHUNK_SIZE, 3), len(np.unique(y_train)))
 
-    model = Sequential([
+    modelTest = Sequential([
         Conv1D(64, 7, activation='relu', input_shape=(CHUNK_SIZE, 3)),
         MaxPooling1D(8),
         Conv1D(128, 5, activation='relu'),
@@ -750,12 +752,17 @@ if __name__ == '__main__':
         keras.layers.Dropout(0.3),
         Dense(len(np.unique(y_train)), activation='softmax')
     ])
+    """
+    More testing with more epochs
+    """
+    model = BirdsModels.build_inception_time((CHUNK_SIZE, 3), len(np.unique(y_train)))
 
-    model.compile(
-        optimizer='adam',
-        loss='categorical_crossentropy',
-        metrics=['accuracy']
-    )
+
+    # model.compile(
+    #     optimizer='adam',
+    #     loss='categorical_crossentropy',
+    #     metrics=['accuracy']
+    # )
 
     model.compile(
         optimizer='Adam',
@@ -777,7 +784,7 @@ if __name__ == '__main__':
     model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=25,
+        epochs=5,
         batch_size=32,
         shuffle=True,
         callbacks=[early_stop]

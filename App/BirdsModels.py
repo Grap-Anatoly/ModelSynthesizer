@@ -1,4 +1,22 @@
 import keras.layers
+import numpy as np
+from scipy.stats import skew, kurtosis
+
+def extract_global_features(X):
+    # X shape (n_samples, 200, 5)
+    feats = []
+    for sample in X:
+        sample_feats = []
+        for ch in range(sample.shape[1]):
+            col = sample[:, ch]
+            sample_feats.extend([
+                np.mean(col), np.std(col),
+                np.min(col), np.percentile(col, 25),
+                np.median(col), np.percentile(col, 75),
+                np.max(col), skew(col), kurtosis(col)
+            ])
+        feats.append(sample_feats)
+    return np.array(feats)
 
 def residual_block(x, filters, kernel_size, stride=1):
     """Basic residual block with two Conv1D layers and a skip connection."""
@@ -78,3 +96,88 @@ def build_cnn_lstm(input_shape, num_classes):
 
     model = keras.Model(inputs, outputs)
     return model
+
+
+def inception_module(x, filters=32):
+    # Four parallel branches
+    b1 = keras.layers.Conv1D(filters, 1, padding='same', activation='relu')(x)
+
+    b2 = keras.layers.Conv1D(filters, 1, padding='same', activation='relu')(x)
+    b2 = keras.layers.Conv1D(filters, 3, padding='same', activation='relu')(b2)
+
+    b3 = keras.layers.Conv1D(filters, 1, padding='same', activation='relu')(x)
+    b3 = keras.layers.Conv1D(filters, 5, padding='same', activation='relu')(b3)
+
+    b4 = keras.layers.MaxPooling1D(3, strides=1, padding='same')(x)
+    b4 = keras.layers.Conv1D(filters, 1, padding='same', activation='relu')(b4)
+
+    return keras.layers.Concatenate()([b1, b2, b3, b4])
+
+"""
+Pure convolutional
+"""
+def build_inception_time(input_shape, num_classes):
+    inputs = keras.Input(shape=input_shape)
+    x = inputs
+    for filters in [32, 64, 128]:
+        x = inception_module(x, filters)
+        x = keras.layers.MaxPooling1D(2)(x)  # halve the time dimension
+    x = keras.layers.GlobalAveragePooling1D()(x)
+    x = keras.layers.Dropout(0.5)(x)
+    outputs = keras.layers.Dense(num_classes, activation='softmax')(x)
+    return keras.Model(inputs, outputs)
+
+"""
+For definetive beginning–middle–end structure 
+"""
+def build_bilstm_attention(input_shape, num_classes):
+    inputs = keras.Input(shape=input_shape)
+
+    # Bidirectional LSTM (return sequences for attention)
+    x = keras.layers.Bidirectional(keras.layers.LSTM(64, return_sequences=True, dropout=0.3))(inputs)
+
+    # Attention mechanism (Bahdanau-style)
+    score = keras.layers.Dense(1, activation='tanh')(x)  # (batch, time, 1)
+    attention_weights = keras.layers.Softmax(axis=1)(score)  # (batch, time, 1)
+    context = keras.layers.Dot(axes=[1, 1])([attention_weights, x])  # (batch, features*2)
+
+    # Classifier
+    x = keras.layers.Dropout(0.5)(context)
+    x = keras.layers.Dense(64, activation='relu')(x)
+    x = keras.layers.Dropout(0.3)(x)
+    outputs = keras.layers.Dense(num_classes, activation='softmax')(x)
+
+    return keras.Model(inputs, outputs)
+
+
+def transformer_encoder(x, num_heads=4, ff_dim=64, dropout=0.3):
+    # Multi-head self-attention
+    attn = keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=x.shape[-1], dropout=dropout)(x, x)
+    attn = keras.layers.Add()([x, attn])
+    attn = keras.layers.LayerNormalization()(attn)
+
+    # Feed-forward
+    ffn = keras.layers.Dense(ff_dim, activation='relu')(attn)
+    ffn = keras.layers.Dense(x.shape[-1])(ffn)
+    ffn = keras.layers.Add()([attn, ffn])
+    ffn = keras.layers.LayerNormalization()(ffn)
+    return ffn
+
+"""
+For large number of samples
+"""
+def build_transformer(input_shape, num_classes):
+    inputs = keras.Input(shape=input_shape)
+    # Add positional encoding (learned or fixed)
+    pos_enc = keras.layers.Embedding(input_dim=input_shape[0], output_dim=input_shape[-1])(tf.range(input_shape[0]))
+    x = inputs + pos_enc
+
+    # Two shallow transformer blocks
+    x = transformer_encoder(x, num_heads=2, ff_dim=32, dropout=0.3)
+    x = transformer_encoder(x, num_heads=2, ff_dim=32, dropout=0.3)
+
+    # Pool and classify
+    x = keras.layers.GlobalAveragePooling1D()(x)
+    x = keras.layers.Dropout(0.4)(x)
+    outputs = keras.layers.Dense(num_classes, activation='softmax')(x)
+    return keras.Model(inputs, outputs)

@@ -115,6 +115,9 @@ def inception_module(x, filters=32):
 
 """
 Pure convolutional
+70% 
+20 samples per file
+Long time, 10 > Epochs
 """
 def build_inception_time(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)

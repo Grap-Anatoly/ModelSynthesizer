@@ -47,7 +47,7 @@ if __name__ == '__main__':
     CHUNK_DURATION = 3.0  # seconds
     # CHUNK_DURATION = 1.5  # seconds
     CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
-    MAX_FILES_PER_CLASS = 30
+    MAX_FILES_PER_CLASS = 20
 
     # =========================
     # PLOTS
@@ -753,7 +753,9 @@ if __name__ == '__main__':
         Dense(len(np.unique(y_train)), activation='softmax')
     ])
     """
-    More testing with more epochs
+    70% 
+    20 samples per file
+    Long time, 10 > Epochs
     """
     model = BirdsModels.build_inception_time((CHUNK_SIZE, 3), len(np.unique(y_train)))
 
@@ -784,7 +786,7 @@ if __name__ == '__main__':
     model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=5,
+        epochs=15,
         batch_size=32,
         shuffle=True,
         callbacks=[early_stop]

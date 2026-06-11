@@ -1,6 +1,7 @@
 import keras.layers
 import numpy as np
 from scipy.stats import skew, kurtosis
+import tensorflow as tf
 
 def extract_global_features(X):
     # X shape (n_samples, 200, 5)
@@ -130,28 +131,6 @@ def build_inception_time(input_shape, num_classes):
     outputs = keras.layers.Dense(num_classes, activation='softmax')(x)
     return keras.Model(inputs, outputs)
 
-"""
-For definetive beginning–middle–end structure 
-"""
-def build_bilstm_attention(input_shape, num_classes):
-    inputs = keras.Input(shape=input_shape)
-
-    # Bidirectional LSTM (return sequences for attention)
-    x = keras.layers.Bidirectional(keras.layers.LSTM(64, return_sequences=True, dropout=0.3))(inputs)
-
-    # Attention mechanism (Bahdanau-style)
-    score = keras.layers.Dense(1, activation='tanh')(x)  # (batch, time, 1)
-    attention_weights = keras.layers.Softmax(axis=1)(score)  # (batch, time, 1)
-    context = keras.layers.Dot(axes=[1, 1])([attention_weights, x])  # (batch, features*2)
-
-    # Classifier
-    x = keras.layers.Dropout(0.5)(context)
-    x = keras.layers.Dense(64, activation='relu')(x)
-    x = keras.layers.Dropout(0.3)(x)
-    outputs = keras.layers.Dense(num_classes, activation='softmax')(x)
-
-    return keras.Model(inputs, outputs)
-
 
 def transformer_encoder(x, num_heads=4, ff_dim=64, dropout=0.3):
     # Multi-head self-attention
@@ -167,7 +146,7 @@ def transformer_encoder(x, num_heads=4, ff_dim=64, dropout=0.3):
     return ffn
 
 """
-For large number of samples
+For large number of samples (Error)
 """
 def build_transformer(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)

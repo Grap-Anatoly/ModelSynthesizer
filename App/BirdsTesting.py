@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
+from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 from collections import Counter
 import pickle
@@ -68,9 +69,7 @@ if __name__ == '__main__':
     def plot_spectrogram_grid(X, y, label_encoder=None, rows=3, cols=3):
 
         total = rows * cols
-
         plt.figure(figsize=(15, 10))
-
         indices = np.random.choice(len(X), total, replace=False)
 
         for i, idx in enumerate(indices):
@@ -330,37 +329,163 @@ if __name__ == '__main__':
         chunks = split_into_chunks(y, CHUNK_SIZE)
         # chunks = split_into_chunks(y, CHUNK_SIZE, 1)
 
+        """
+        Resize to match chunk length
+        """
+        def expand_feature(feature, target_length):
+            return np.interp(
+                np.linspace(0, len(feature), num=target_length),
+                np.arange(len(feature)),
+                feature
+            )
+
         processed_chunks = []
 
         for chunk in chunks:
             chunk = fix_length(chunk, CHUNK_SIZE)
 
-            # =========================
-            # RMS & ZCR (frame-based)
-            # =========================
+            """
+            RMS and ZCR
+            """
             rms = librosa.feature.rms(y=chunk)[0]
             zcr = librosa.feature.zero_crossing_rate(chunk)[0]
 
-            # =========================
-            # Resize to match chunk length
-            # =========================
-            def expand_feature(feature, target_length):
-                return np.interp(
-                    np.linspace(0, len(feature), num=target_length),
-                    np.arange(len(feature)),
-                    feature
-                )
-
             rms_expanded = expand_feature(rms, len(chunk))
             zcr_expanded = expand_feature(zcr, len(chunk))
+
+            """
+            Pitch
+            """
+
+            f0, voiced_flag, voiced_probs = librosa.pyin(
+                chunk,
+                fmin=librosa.note_to_hz('C2'),
+                fmax=librosa.note_to_hz('C7')
+            )
+
+            f0 = np.nan_to_num(f0)
+            pitch_expanded = expand_feature(f0, len(chunk))
+
+            """
+            Harmonic energy
+            """
+
+            harmonic, percussive = librosa.effects.hpss(chunk)
+
+            harmonic_rms = librosa.feature.rms(y=harmonic)[0]
+            harmonic_expanded = expand_feature(
+                harmonic_rms,
+                len(chunk)
+            )
+
+            """
+            Frequency Modulation
+            """
+
+            pitch_delta = np.gradient(f0)
+
+            pitch_delta_expanded = expand_feature(
+                pitch_delta,
+                len(chunk)
+            )
+
+            """
+            Spectral Centroid
+            """
+
+            centroid = librosa.feature.spectral_centroid(
+                y=chunk,
+                sr=sr
+            )[0]
+
+            centroid_expanded = expand_feature(
+                centroid,
+                len(chunk)
+            )
+
+            """
+            Spectral Bandwidth
+            """
+
+            bandwidth = librosa.feature.spectral_bandwidth(
+                y=chunk,
+                sr=sr
+            )[0]
+
+            bandwidth_expanded = expand_feature(
+                bandwidth,
+                len(chunk)
+            )
+
+            """
+            Spectral rolloff
+            """
+
+            rolloff = librosa.feature.spectral_rolloff(
+                y=chunk,
+                sr=sr
+            )[0]
+
+            rolloff_expanded = expand_feature(
+                rolloff,
+                len(chunk)
+            )
+
+            """
+            Spectral flatness
+            """
+
+            flatness = librosa.feature.spectral_flatness(
+                y=chunk
+            )[0]
+
+            flatness_expanded = expand_feature(
+                flatness,
+                len(chunk)
+            )
+
+            """
+            Syllable Structure
+            """
+
+            energy = librosa.feature.rms(y=chunk)[0]
+            threshold = np.mean(energy)
+            syllables = energy > threshold
+            syllable_count = np.sum(
+                np.diff(syllables.astype(int)) == 1
+            )
+
+            syllable_feature = np.full(
+                len(chunk),
+                syllable_count
+            )
 
             # =========================
             # Stack channels
             # =========================
             combined = np.stack([
                 normalize_feature(chunk),
-                normalize_feature(rms_expanded),
-                normalize_feature(zcr_expanded)
+                # normalize_feature(rms_expanded),
+                # normalize_feature(zcr_expanded),
+                #
+                # normalize_feature(pitch_expanded),
+                # normalize_feature(harmonic_expanded),
+                # normalize_feature(pitch_delta_expanded),
+                # normalize_feature(centroid_expanded),
+                # normalize_feature(bandwidth_expanded),
+                # normalize_feature(rolloff_expanded),
+                # normalize_feature(flatness_expanded),
+                # normalize_feature(syllable_feature)
+                rms_expanded,
+                zcr_expanded,
+                pitch_expanded,
+                harmonic_expanded,
+                pitch_delta_expanded,
+                centroid_expanded,
+                bandwidth_expanded,
+                rolloff_expanded,
+                flatness_expanded,
+                # syllable_feature
             ], axis=-1)
 
             processed_chunks.append(combined)
@@ -511,10 +636,102 @@ if __name__ == '__main__':
     # X_val = X_val / (np.max(np.abs(X_val), axis=1, keepdims=True) + 1e-8)
     # X_test = X_test / (np.max(np.abs(X_test), axis=1, keepdims=True) + 1e-8)
 
-    X_train, y_train, X_val, y_val, X_test, y_test = process_dataset_split(DATASET_PATH)
-    print("X_train shape:", X_train.shape)
-    print("X_val shape:", X_val.shape)
-    print("X_test shape:", X_test.shape)
+    le = LabelEncoder()
+
+    if os.path.isfile("D:/PythonProjects/MagRobotaData/BirdsData/X_train.npy"):
+        X_train = np.load("D:/PythonProjects/MagRobotaData/BirdsData/X_train.npy")
+        X_val = np.load("D:/PythonProjects/MagRobotaData/BirdsData/X_val.npy")
+        X_test = np.load("D:/PythonProjects/MagRobotaData/BirdsData/X_test.npy")
+        y_train = np.load("D:/PythonProjects/MagRobotaData/BirdsData/y_train.npy")
+        y_val = np.load("D:/PythonProjects/MagRobotaData/BirdsData/y_val.npy")
+        y_test = np.load("D:/PythonProjects/MagRobotaData/BirdsData/y_test.npy")
+
+        le = LabelEncoder()
+
+        y_train = le.fit_transform(y_train)
+        y_val = le.transform(y_val)
+        y_test = le.transform(y_test)
+
+        print("X_train shape:", X_train.shape)
+        print("X_val shape:", X_val.shape)
+        print("X_test shape:", X_test.shape)
+
+        # print("Train:", Counter(y_train))
+        # print("Val:", Counter(y_val))
+        # print("Test:", Counter(y_test))
+
+        for cls in np.unique(y_train):
+            idx = np.where(y_train == cls)[0]
+
+            print(f"\nClass {cls}")
+
+            mean_features = X_train[idx].mean(axis=(0, 1))
+
+            print(mean_features)
+
+
+        for i in range(X_train.shape[-1]):
+            print(
+                f"Feature {i}",
+                np.min(X_train[:, :, i]),
+                np.max(X_train[:, :, i]),
+                np.std(X_train[:, :, i])
+            )
+
+        print(mean_features)
+    else:
+        X_train, y_train, X_val, y_val, X_test, y_test = process_dataset_split(DATASET_PATH)
+        print("X_train shape:", X_train.shape)
+        print("X_val shape:", X_val.shape)
+        print("X_test shape:", X_test.shape)
+
+        # Encode labels
+        le = LabelEncoder()
+        # y_encoded = le.fit_transform(y)
+
+        y_train = le.fit_transform(y_train)
+        y_val = le.transform(y_val)
+        y_test = le.transform(y_test)
+
+        print(len(np.unique(y_train)))
+
+        np.save("D:/PythonProjects/MagRobotaData/BirdsData/X_train.npy", X_train)
+        np.save("D:/PythonProjects/MagRobotaData/BirdsData/X_val.npy", X_val)
+        np.save("D:/PythonProjects/MagRobotaData/BirdsData/X_test.npy", X_test)
+        np.save("D:/PythonProjects/MagRobotaData/BirdsData/y_train.npy", y_train)
+        np.save("D:/PythonProjects/MagRobotaData/BirdsData/y_test.npy", y_test)
+        np.save("D:/PythonProjects/MagRobotaData/BirdsData/y_val.npy", y_val)
+
+        # export_to_excel(X_train, y_train, le, "train_data.xlsx")
+        # export_to_excel(X_val, y_val, le, "validation_data.xlsx")
+        # export_to_excel(X_test, y_test, le, "test_data.xlsx")
+        # export_full_chunks(X_val, y_val, le, "validation_data_full.xlsx")
+
+    # Global Normalization
+    n_features = X_train.shape[-1]
+
+    scalers = []
+
+    for i in range(n_features):
+        scaler = StandardScaler()
+
+        scaler.fit(
+            X_train[:, :, i].reshape(-1, 1)
+        )
+
+        X_train[:, :, i] = scaler.transform(
+            X_train[:, :, i].reshape(-1, 1)
+        ).reshape(X_train.shape[0], X_train.shape[1])
+
+        X_val[:, :, i] = scaler.transform(
+            X_val[:, :, i].reshape(-1, 1)
+        ).reshape(X_val.shape[0], X_val.shape[1])
+
+        X_test[:, :, i] = scaler.transform(
+            X_test[:, :, i].reshape(-1, 1)
+        ).reshape(X_test.shape[0], X_test.shape[1])
+
+        scalers.append(scaler)
 
     #Downsampling 60k > 600 steps
     # X_train = downsample_sequence(X_train, factor=10)  # (665, 6615, 3)
@@ -524,16 +741,6 @@ if __name__ == '__main__':
     # print("X_val shape:", X_val.shape)
     # print("X_test shape:", X_test.shape)
 
-    # Encode labels
-    le = LabelEncoder()
-    # y_encoded = le.fit_transform(y)
-
-    y_train = le.fit_transform(y_train)
-    y_val = le.transform(y_val)
-    y_test = le.transform(y_test)
-
-    print(len(np.unique(y_train)))
-
     # plot_spectrogram_grid(
     #     X_train,
     #     y_train,
@@ -542,13 +749,8 @@ if __name__ == '__main__':
     #     cols=3
     # )
 
-    # export_to_excel(X_train, y_train, le, "train_data.xlsx")
-    # export_to_excel(X_val, y_val, le, "validation_data.xlsx")
-    # export_to_excel(X_test, y_test, le, "test_data.xlsx")
-    # export_full_chunks(X_val, y_val, le, "validation_data_full.xlsx")
-
     # =========================
-    # FINAL SHAPE FOR 1D CNN
+    # SHAPE FOR 1D CNN
     # =========================
     # (samples, timesteps, channels)
 
@@ -556,15 +758,7 @@ if __name__ == '__main__':
     # X_val = X_val[..., np.newaxis]
     # X_test = X_test[..., np.newaxis]
 
-    # =========================
-    # SAVE
-    # =========================
-    # np.save("X_train.npy", X_train)
-    # np.save("X_val.npy", X_val)
-    # np.save("X_test.npy", X_test)
-    # np.save("y_train.npy", y_train)
-    # np.save("y_test.npy", y_test)
-    # np.save("y_val.npy", y_val)
+
 
     # =========================
     # TEST
@@ -637,7 +831,7 @@ if __name__ == '__main__':
     - ZCR
     """
 
-    modelConv70 = Sequential([
+    modelLotsofEpochs = Sequential([
         Conv1D(64, 5, activation='relu', input_shape=(CHUNK_SIZE, 3)),
         MaxPooling1D(2),
         Conv1D(32, 5, activation='relu'),
@@ -742,12 +936,16 @@ if __name__ == '__main__':
     """
     modelCnnLSTM = BirdsModels.build_cnn_lstm((CHUNK_SIZE, 3), len(np.unique(y_train)))
 
+    """
+    test
+    """
+
     modelTest = Sequential([
         Conv1D(64, 7, activation='relu', input_shape=(CHUNK_SIZE, 3)),
         MaxPooling1D(8),
         Conv1D(128, 5, activation='relu'),
         MaxPooling1D(8),
-        keras.layers.Bidirectional(LSTM(64, return_sequences=False)),
+        # keras.layers.Bidirectional(LSTM(64, return_sequences=False)),
         Dense(256, activation='relu'),
         keras.layers.Dropout(0.3),
         Dense(len(np.unique(y_train)), activation='softmax')
@@ -757,7 +955,59 @@ if __name__ == '__main__':
     20 samples per file
     Long time, 10 > Epochs
     """
-    model = BirdsModels.build_inception_time((CHUNK_SIZE, 3), len(np.unique(y_train)))
+    modelInception = BirdsModels.build_inception_time((CHUNK_SIZE, 3), len(np.unique(y_train)))
+
+    """
+    Not Bad
+    """
+
+    model4Conv = Sequential([
+        Conv1D(64, 9, activation='relu',input_shape=(X_train.shape[1], X_train.shape[2])),
+        MaxPooling1D(8),
+        Conv1D(128, 7, activation='relu'),
+        MaxPooling1D(8),
+        Conv1D(256, 5, activation='relu'),
+        MaxPooling1D(4),
+        Conv1D(512, 3, activation='relu'),
+        keras.layers.GlobalAveragePooling1D(),
+        Dense(256, activation='relu'),
+        keras.layers.Dropout(0.5),
+        Dense(len(np.unique(y_train)), activation='softmax')
+    ])
+
+    """
+    MultiFeature
+    Low Epochs - Good learning - Bad Testing
+    """
+
+    modelLowEpochs = Sequential([
+        Conv1D(64, kernel_size=9, padding='same', activation='relu',  input_shape=(X_train.shape[1], X_train.shape[2])),
+        keras.layers.BatchNormalization(),
+        MaxPooling1D(8),
+        Conv1D(128, kernel_size=7, padding='same', activation='relu'),
+        keras.layers.BatchNormalization(),
+        MaxPooling1D(8),
+        Conv1D(256, kernel_size=5, padding='same', activation='relu'),
+        keras.layers.BatchNormalization(),
+        MaxPooling1D(4),
+        Conv1D(512, kernel_size=3, padding='same', activation='relu'),
+        keras.layers.BatchNormalization(),
+        keras.layers.GlobalAveragePooling1D(),
+        Dense(256, activation='relu'),
+        keras.layers.Dropout(0.5),
+        Dense(128, activation='relu'),
+        keras.layers.Dropout(0.3),
+        Dense(len(np.unique(y_train)), activation='softmax')
+    ])
+
+    model = Sequential([
+        keras.layers.GlobalAveragePooling1D(
+            input_shape=(X_train.shape[1], X_train.shape[2])),
+        Dense(64, activation='relu'),
+        keras.layers.Dropout(0.5),
+
+        Dense(len(np.unique(y_train)), activation='softmax')
+    ])
 
 
     # model.compile(
@@ -786,7 +1036,7 @@ if __name__ == '__main__':
     model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=15,
+        epochs=50,
         batch_size=32,
         shuffle=True,
         callbacks=[early_stop]

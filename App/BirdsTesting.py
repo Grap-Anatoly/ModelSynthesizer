@@ -1001,11 +1001,13 @@ if __name__ == '__main__':
     ])
 
     model = Sequential([
-        keras.layers.GlobalAveragePooling1D(
-            input_shape=(X_train.shape[1], X_train.shape[2])),
-        Dense(64, activation='relu'),
+        Conv1D(32, kernel_size=7, activation='relu', padding='same', input_shape=(X_train.shape[1], X_train.shape[2])),
+        MaxPooling1D(16),
+        Conv1D(64, kernel_size=5, activation='relu', padding='same'),
+        MaxPooling1D(16),
+        keras.layers.GlobalAveragePooling1D(),
+        Dense(128, activation='relu'),
         keras.layers.Dropout(0.5),
-
         Dense(len(np.unique(y_train)), activation='softmax')
     ])
 

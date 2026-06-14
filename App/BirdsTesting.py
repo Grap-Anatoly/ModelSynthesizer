@@ -8,6 +8,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.preprocessing import StandardScaler
+from sklearn.utils.class_weight import compute_class_weight
 from tqdm import tqdm
 from collections import Counter
 import pickle
@@ -460,22 +461,23 @@ if __name__ == '__main__':
                 syllable_count
             )
 
+            """
+            MFCC
+            """
+
+            mfcc = librosa.feature.mfcc(
+                y=chunk,
+                sr=sr,
+                n_mfcc=13
+            )
+
             # =========================
             # Stack channels
             # =========================
+
             combined = np.stack([
                 normalize_feature(chunk),
-                # normalize_feature(rms_expanded),
-                # normalize_feature(zcr_expanded),
-                #
-                # normalize_feature(pitch_expanded),
-                # normalize_feature(harmonic_expanded),
-                # normalize_feature(pitch_delta_expanded),
-                # normalize_feature(centroid_expanded),
-                # normalize_feature(bandwidth_expanded),
-                # normalize_feature(rolloff_expanded),
-                # normalize_feature(flatness_expanded),
-                # normalize_feature(syllable_feature)
+
                 rms_expanded,
                 zcr_expanded,
                 pitch_expanded,
@@ -485,6 +487,8 @@ if __name__ == '__main__':
                 bandwidth_expanded,
                 rolloff_expanded,
                 flatness_expanded,
+                # mfcc
+                # mfcc,
                 # syllable_feature
             ], axis=-1)
 
@@ -733,6 +737,21 @@ if __name__ == '__main__':
 
         scalers.append(scaler)
 
+    classes = np.unique(y_train)
+
+    weights = compute_class_weight(
+        class_weight='balanced',
+        classes=classes,
+        y=y_train
+    )
+
+    class_weights = {
+        cls: weight
+        for cls, weight in zip(classes, weights)
+    }
+
+    print(class_weights)
+
     #Downsampling 60k > 600 steps
     # X_train = downsample_sequence(X_train, factor=10)  # (665, 6615, 3)
     # X_val = downsample_sequence(X_val, factor=10)
@@ -929,7 +948,7 @@ if __name__ == '__main__':
     - ZCR
     """
 
-    modelCnn = BirdsModels.build_Cnn_model((X_train.shape[1], 3), len(np.unique(y_train)))
+    modelCnn = BirdsModels.build_Cnn_model((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
 
     """
     Bad
@@ -955,7 +974,7 @@ if __name__ == '__main__':
     20 samples per file
     Long time, 10 > Epochs
     """
-    modelInception = BirdsModels.build_inception_time((CHUNK_SIZE, 3), len(np.unique(y_train)))
+    modelInception = BirdsModels.build_inception_time((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
 
     """
     Not Bad
@@ -1041,7 +1060,8 @@ if __name__ == '__main__':
         epochs=50,
         batch_size=32,
         shuffle=True,
-        callbacks=[early_stop]
+        callbacks=[early_stop],
+        class_weight=class_weights
     )
 
     test_loss, test_acc = model.evaluate(X_test, y_test, verbose=1)

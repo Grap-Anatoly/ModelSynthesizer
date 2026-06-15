@@ -475,6 +475,31 @@ if __name__ == '__main__':
             # Stack channels
             # =========================
 
+            print(rms.shape)
+            print(zcr.shape)
+            print(f0.shape)
+            print(harmonic.shape)
+            print(pitch_delta.shape)
+            print(centroid.shape)
+            print(bandwidth.shape)
+            print(rolloff.shape)
+            print(flatness.shape)
+            print(mfcc.shape)
+
+            combinedMfcc = np.stack([
+                rms,
+                zcr,
+                f0,
+                harmonic,
+                pitch_delta,
+                centroid,
+                bandwidth,
+                rolloff,
+                flatness,
+                mfcc,
+            ], axis=-1)
+
+
             combined = np.stack([
                 normalize_feature(chunk),
 
@@ -948,12 +973,12 @@ if __name__ == '__main__':
     - ZCR
     """
 
-    modelCnn = BirdsModels.build_Cnn_model((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
+    model = BirdsModels.build_Cnn_model((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
 
     """
     Bad
     """
-    modelCnnLSTM = BirdsModels.build_cnn_lstm((CHUNK_SIZE, 3), len(np.unique(y_train)))
+    modelCnnLSTM = BirdsModels.build_cnn_lstm((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
 
     """
     test
@@ -1019,7 +1044,7 @@ if __name__ == '__main__':
         Dense(len(np.unique(y_train)), activation='softmax')
     ])
 
-    model = Sequential([
+    modelShort = Sequential([
         Conv1D(32, kernel_size=7, activation='relu', padding='same', input_shape=(X_train.shape[1], X_train.shape[2])),
         MaxPooling1D(16),
         Conv1D(64, kernel_size=5, activation='relu', padding='same'),

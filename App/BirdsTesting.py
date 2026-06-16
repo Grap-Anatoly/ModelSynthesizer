@@ -22,6 +22,9 @@ from keras import regularizers, callbacks
 import BirdsModels
 
 if __name__ == '__main__':
+
+    keras.backend.clear_session()
+
     # =========================
     # CONFIG
     # =========================
@@ -49,7 +52,8 @@ if __name__ == '__main__':
     CHUNK_DURATION = 3.0  # seconds
     # CHUNK_DURATION = 1.5  # seconds
     CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
-    MAX_FILES_PER_CLASS = 20
+    # 20 is default
+    MAX_FILES_PER_CLASS = 40
 
     # =========================
     # PLOTS
@@ -471,52 +475,62 @@ if __name__ == '__main__':
                 n_mfcc=13
             )
 
+            delta_mfcc = librosa.feature.delta(mfcc)
+            delta2_mfcc = librosa.feature.delta(mfcc, order=2)
+
+            delta_mfcc = delta_mfcc.T,
+            delta2_mfcc = delta2_mfcc.T
+
             # =========================
             # Stack channels
             # =========================
 
-            print(rms.shape)
-            print(zcr.shape)
-            print(f0.shape)
-            print(harmonic.shape)
-            print(pitch_delta.shape)
-            print(centroid.shape)
-            print(bandwidth.shape)
-            print(rolloff.shape)
-            print(flatness.shape)
-            print(mfcc.shape)
+            rms_rehsaped = rms.reshape(-1, 1)
+            zcr_rehsaped = zcr.reshape(-1, 1)
+            f0_rehsaped = f0.reshape(-1, 1)
+            pitch_delta_rehsaped = pitch_delta.reshape(-1, 1)
+            centroid_rehsaped = centroid.reshape(-1, 1)
+            bandwidth_rehsaped = bandwidth.reshape(-1, 1)
+            rolloff_rehsaped = rolloff.reshape(-1, 1)
+            flatness_rehsaped = flatness.reshape(-1, 1)
 
-            combinedMfcc = np.stack([
-                rms,
-                zcr,
-                f0,
-                harmonic,
-                pitch_delta,
-                centroid,
-                bandwidth,
-                rolloff,
-                flatness,
+            mfcc = mfcc.T
+
+            # print(rms.shape)
+            # print(mfcc.shape)
+
+            combined = np.concatenate([
+                rms_rehsaped,
+                zcr_rehsaped,
+                f0_rehsaped,
+                pitch_delta_rehsaped,
+                centroid_rehsaped,
+                bandwidth_rehsaped,
+                rolloff_rehsaped,
+                flatness_rehsaped,
                 mfcc,
+                delta_mfcc,
+                delta2_mfcc,
             ], axis=-1)
 
+            # combinedOriginal = np.stack([
+            #     normalize_feature(chunk),
+            #
+            #     rms_expanded,
+            #     zcr_expanded,
+            #     pitch_expanded,
+            #     harmonic_expanded,
+            #     pitch_delta_expanded,
+            #     centroid_expanded,
+            #     bandwidth_expanded,
+            #     rolloff_expanded,
+            #     flatness_expanded,
+            #     # mfcc
+            #     # mfcc,
+            #     # syllable_feature
+            # ], axis=-1)
 
-            combined = np.stack([
-                normalize_feature(chunk),
-
-                rms_expanded,
-                zcr_expanded,
-                pitch_expanded,
-                harmonic_expanded,
-                pitch_delta_expanded,
-                centroid_expanded,
-                bandwidth_expanded,
-                rolloff_expanded,
-                flatness_expanded,
-                # mfcc
-                # mfcc,
-                # syllable_feature
-            ], axis=-1)
-
+            # print(combined.shape)
             processed_chunks.append(combined)
 
         return processed_chunks
@@ -973,7 +987,7 @@ if __name__ == '__main__':
     - ZCR
     """
 
-    model = BirdsModels.build_Cnn_model((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
+    modelCnn = BirdsModels.build_Cnn_model((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
 
     """
     Bad
@@ -1005,53 +1019,68 @@ if __name__ == '__main__':
     Not Bad
     """
 
-    model4Conv = Sequential([
-        Conv1D(64, 9, activation='relu',input_shape=(X_train.shape[1], X_train.shape[2])),
-        MaxPooling1D(8),
-        Conv1D(128, 7, activation='relu'),
-        MaxPooling1D(8),
-        Conv1D(256, 5, activation='relu'),
-        MaxPooling1D(4),
-        Conv1D(512, 3, activation='relu'),
-        keras.layers.GlobalAveragePooling1D(),
-        Dense(256, activation='relu'),
-        keras.layers.Dropout(0.5),
-        Dense(len(np.unique(y_train)), activation='softmax')
-    ])
+    # model4Conv = Sequential([
+    #     Conv1D(64, 9, activation='relu',input_shape=(X_train.shape[1], X_train.shape[2])),
+    #     MaxPooling1D(8),
+    #     Conv1D(128, 7, activation='relu'),
+    #     MaxPooling1D(8),
+    #     Conv1D(256, 5, activation='relu'),
+    #     MaxPooling1D(4),
+    #     Conv1D(512, 3, activation='relu'),
+    #     keras.layers.GlobalAveragePooling1D(),
+    #     Dense(256, activation='relu'),
+    #     keras.layers.Dropout(0.5),
+    #     Dense(len(np.unique(y_train)), activation='softmax')
+    # ])
 
     """
     MultiFeature
     Low Epochs - Good learning - Bad Testing
     """
 
-    modelLowEpochs = Sequential([
-        Conv1D(64, kernel_size=9, padding='same', activation='relu',  input_shape=(X_train.shape[1], X_train.shape[2])),
-        keras.layers.BatchNormalization(),
-        MaxPooling1D(8),
-        Conv1D(128, kernel_size=7, padding='same', activation='relu'),
-        keras.layers.BatchNormalization(),
-        MaxPooling1D(8),
-        Conv1D(256, kernel_size=5, padding='same', activation='relu'),
-        keras.layers.BatchNormalization(),
-        MaxPooling1D(4),
-        Conv1D(512, kernel_size=3, padding='same', activation='relu'),
-        keras.layers.BatchNormalization(),
-        keras.layers.GlobalAveragePooling1D(),
-        Dense(256, activation='relu'),
-        keras.layers.Dropout(0.5),
-        Dense(128, activation='relu'),
-        keras.layers.Dropout(0.3),
-        Dense(len(np.unique(y_train)), activation='softmax')
-    ])
+    # modelLowEpochs = Sequential([
+    #     Conv1D(64, kernel_size=9, padding='same', activation='relu',  input_shape=(X_train.shape[1], X_train.shape[2])),
+    #     keras.layers.BatchNormalization(),
+    #     MaxPooling1D(8),
+    #     Conv1D(128, kernel_size=7, padding='same', activation='relu'),
+    #     keras.layers.BatchNormalization(),
+    #     MaxPooling1D(8),
+    #     Conv1D(256, kernel_size=5, padding='same', activation='relu'),
+    #     keras.layers.BatchNormalization(),
+    #     MaxPooling1D(4),
+    #     Conv1D(512, kernel_size=3, padding='same', activation='relu'),
+    #     keras.layers.BatchNormalization(),
+    #     keras.layers.GlobalAveragePooling1D(),
+    #     Dense(256, activation='relu'),
+    #     keras.layers.Dropout(0.5),
+    #     Dense(128, activation='relu'),
+    #     keras.layers.Dropout(0.3),
+    #     Dense(len(np.unique(y_train)), activation='softmax')
+    # ])
 
-    modelShort = Sequential([
-        Conv1D(32, kernel_size=7, activation='relu', padding='same', input_shape=(X_train.shape[1], X_train.shape[2])),
-        MaxPooling1D(16),
-        Conv1D(64, kernel_size=5, activation='relu', padding='same'),
-        MaxPooling1D(16),
+    # modelShort = Sequential([
+    #     Conv1D(32, kernel_size=7, activation='relu', padding='same', input_shape=(X_train.shape[1], X_train.shape[2])),
+    #     MaxPooling1D(16),
+    #     Conv1D(64, kernel_size=5, activation='relu', padding='same'),
+    #     MaxPooling1D(16),
+    #     keras.layers.GlobalAveragePooling1D(),
+    #     Dense(128, activation='relu'),
+    #     keras.layers.Dropout(0.5),
+    #     Dense(len(np.unique(y_train)), activation='softmax')
+    # ])
+
+    model = Sequential([
+        Conv1D(32, kernel_size=5, activation='relu', padding='same', input_shape=(X_train.shape[1], X_train.shape[2])),
+        keras.layers.BatchNormalization(),
+        MaxPooling1D(2),
+        Conv1D(64, kernel_size=3, activation='relu', padding='same'),
+        keras.layers.BatchNormalization(),
+        MaxPooling1D(2),
+        Conv1D(128, kernel_size=3, activation='relu', padding='same'),
+        keras.layers.BatchNormalization(),
         keras.layers.GlobalAveragePooling1D(),
         Dense(128, activation='relu'),
-        keras.layers.Dropout(0.5),
+        keras.layers.Dropout(0.4),
         Dense(len(np.unique(y_train)), activation='softmax')
     ])
 
@@ -1061,6 +1090,7 @@ if __name__ == '__main__':
     #     loss='categorical_crossentropy',
     #     metrics=['accuracy']
     # )
+
 
     model.compile(
         optimizer='Adam',

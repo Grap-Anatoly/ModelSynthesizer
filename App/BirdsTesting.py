@@ -54,6 +54,7 @@ if __name__ == '__main__':
     CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
     # 20 is default
     MAX_FILES_PER_CLASS = 40
+    TARGET_CHUNKS = 150
 
     # =========================
     # PLOTS
@@ -478,7 +479,7 @@ if __name__ == '__main__':
             delta_mfcc = librosa.feature.delta(mfcc)
             delta2_mfcc = librosa.feature.delta(mfcc, order=2)
 
-            delta_mfcc = delta_mfcc.T,
+            delta_mfcc = delta_mfcc.T
             delta2_mfcc = delta2_mfcc.T
 
             # =========================
@@ -510,7 +511,7 @@ if __name__ == '__main__':
                 flatness_rehsaped,
                 mfcc,
                 delta_mfcc,
-                delta2_mfcc,
+                delta2_mfcc
             ], axis=-1)
 
             # combinedOriginal = np.stack([
@@ -703,25 +704,23 @@ if __name__ == '__main__':
         # print("Val:", Counter(y_val))
         # print("Test:", Counter(y_test))
 
-        for cls in np.unique(y_train):
-            idx = np.where(y_train == cls)[0]
-
-            print(f"\nClass {cls}")
-
-            mean_features = X_train[idx].mean(axis=(0, 1))
-
-            print(mean_features)
-
-
-        for i in range(X_train.shape[-1]):
-            print(
-                f"Feature {i}",
-                np.min(X_train[:, :, i]),
-                np.max(X_train[:, :, i]),
-                np.std(X_train[:, :, i])
-            )
-
-        print(mean_features)
+        # for cls in np.unique(y_train):
+        #     idx = np.where(y_train == cls)[0]
+        #
+        #     print(f"\nClass {cls}")
+        #
+        #     mean_features = X_train[idx].mean(axis=(0, 1))
+        #
+        #     print(mean_features)
+        # for i in range(X_train.shape[-1]):
+        #     print(
+        #         f"Feature {i}",
+        #         np.min(X_train[:, :, i]),
+        #         np.max(X_train[:, :, i]),
+        #         np.std(X_train[:, :, i])
+        #     )
+        #
+        # print(mean_features)
     else:
         X_train, y_train, X_val, y_val, X_test, y_test = process_dataset_split(DATASET_PATH)
         print("X_train shape:", X_train.shape)
@@ -749,6 +748,11 @@ if __name__ == '__main__':
         # export_to_excel(X_val, y_val, le, "validation_data.xlsx")
         # export_to_excel(X_test, y_test, le, "test_data.xlsx")
         # export_full_chunks(X_val, y_val, le, "validation_data_full.xlsx")
+
+    from collections import Counter
+    print(Counter(y_train))
+    print(Counter(y_val))
+    print(Counter(y_test))
 
     # Global Normalization
     n_features = X_train.shape[-1]
@@ -784,20 +788,36 @@ if __name__ == '__main__':
         y=y_train
     )
 
-    class_weights = {
-        cls: weight
-        for cls, weight in zip(classes, weights)
-    }
+    class_weights = dict(
+        zip(np.unique(y_train), weights)
+    )
 
     print(class_weights)
+    print(Counter(y_train))
 
-    #Downsampling 60k > 600 steps
-    # X_train = downsample_sequence(X_train, factor=10)  # (665, 6615, 3)
-    # X_val = downsample_sequence(X_val, factor=10)
-    # X_test = downsample_sequence(X_test, factor=10)
-    # print("X_train shape:", X_train.shape)
-    # print("X_val shape:", X_val.shape)
-    # print("X_test shape:", X_test.shape)
+    # features = [
+    #     "rms",
+    #     "zcr",
+    #     "pitch",
+    #     "pitch_delta",
+    #     "centroid",
+    #     "bandwidth",
+    #     "rolloff",
+    #     "flatness",
+    #     "mfcc",
+    #     "delta_mfcc",
+    #     "delta2_mfcc"
+    # ]
+    #
+    # for cls in np.unique(y_train):
+    #     idx = np.where(y_train == cls)[0]
+    #
+    #     print(f"\nClass {cls}")
+    #
+    #     mean_feat = X_train[idx][:, :, :11].mean(axis=(0, 1))
+    #
+    #     for f, v in zip(features, mean_feat):
+    #         print(f"{f}: {v:.3f}")
 
     # plot_spectrogram_grid(
     #     X_train,
@@ -807,34 +827,16 @@ if __name__ == '__main__':
     #     cols=3
     # )
 
-    # =========================
-    # SHAPE FOR 1D CNN
-    # =========================
-    # (samples, timesteps, channels)
-
-    # X_train = X_train[..., np.newaxis]
-    # X_val = X_val[..., np.newaxis]
-    # X_test = X_test[..., np.newaxis]
-
-
-
-    # =========================
-    # TEST
-    # =========================
-
-    # X_train, X_test, y_train, y_test = train_test_split(
-    #     X, y_encoded,
-    #     test_size=0.2,
-    #     random_state=42,
-    #     stratify=y_encoded
-    # )
+    # X_train_rf = np.concatenate([
+    #     X_train.mean(axis=1),
+    #     X_train.std(axis=1)
+    # ], axis=1)
     #
-    # X_train, X_val, y_train, y_val = train_test_split(
-    #     X_train, y_train,
-    #     test_size=0.2,
-    #     random_state=42,
-    #     stratify=y_train
-    # )
+    # X_test_rf = np.concatenate([
+    #     X_test.mean(axis=1),
+    #     X_test.std(axis=1)
+    # ], axis=1)
+
 
     def show_random_predictions(X, y_true, model, label_encoder, n):
         indices = np.random.choice(len(X), n, replace=False)
@@ -1126,6 +1128,9 @@ if __name__ == '__main__':
 
     y_pred_probs = model.predict(X_test)
     y_pred = y_pred_probs.argmax(axis=1)
+
+    from sklearn.metrics import confusion_matrix
+    print(confusion_matrix(y_test, y_pred))
 
     randomPred = show_random_predictions(X_test, y_test, model, le, n=10)
 

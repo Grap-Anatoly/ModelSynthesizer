@@ -163,3 +163,25 @@ def build_transformer(input_shape, num_classes):
     x = keras.layers.Dropout(0.4)(x)
     outputs = keras.layers.Dense(num_classes, activation='softmax')(x)
     return keras.Model(inputs, outputs)
+
+"""
+Random forest
+"""
+
+from sklearn.ensemble import RandomForestClassifier
+
+def rfModel(X_train_rf, X_test_rf, y_train, y_test):
+    rf = RandomForestClassifier(
+        n_estimators=1000,
+        max_depth=15,
+        class_weight='balanced',
+        random_state=42
+    )
+
+    rf.fit(X_train_rf, y_train)
+
+    score = rf.score(X_test_rf, y_test)
+    print(score)
+
+    return score
+

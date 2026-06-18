@@ -53,7 +53,7 @@ if __name__ == '__main__':
     # CHUNK_DURATION = 1.5  # seconds
     CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
     # 20 is default
-    MAX_FILES_PER_CLASS = 40
+    MAX_FILES_PER_CLASS = 50
     TARGET_CHUNKS = 150
 
     # =========================

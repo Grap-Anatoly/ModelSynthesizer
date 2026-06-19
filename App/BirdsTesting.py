@@ -172,19 +172,12 @@ if __name__ == '__main__':
     import pandas as pd
     import numpy as np
 
-
-    # =========================
-    # NORMALIZATION
-    # =========================
     def rms_normalize(y, target_rms=0.1):
         rms = np.sqrt(np.mean(y**2))
         if rms == 0:
             return y
         return y * (target_rms / rms)
 
-    # =========================
-    # FIXED SIZE HANDLING
-    # =========================
     def fix_length(chunk, size):
         if len(chunk) < size:
             # pad with zeros
@@ -192,9 +185,6 @@ if __name__ == '__main__':
         else:
             return chunk[:size]
 
-    # =========================
-    # SPLIT INTO CHUNKS
-    # =========================
     def split_into_chunks(y, chunk_size):
         chunks = []
         for i in range(0, len(y), chunk_size):
@@ -346,6 +336,21 @@ if __name__ == '__main__':
             )
 
         processed_chunks = []
+        """
+        Noise detection by RMS percentile
+        """
+        # chunk_rms_values = []
+        #
+        # for chunk in chunks:
+        #     chunk = fix_length(chunk, CHUNK_SIZE)
+        #
+        #     rms = librosa.feature.rms(y=chunk)[0]
+        #     chunk_rms_values.append(np.mean(rms))
+        #
+        # activity_threshold = np.percentile(
+        #     chunk_rms_values,
+        #     40
+        # )
 
         for chunk in chunks:
             chunk = fix_length(chunk, CHUNK_SIZE)
@@ -354,6 +359,13 @@ if __name__ == '__main__':
             RMS and ZCR
             """
             rms = librosa.feature.rms(y=chunk)[0]
+
+            # """
+            # Noise filter (if rms < treshhold) = processing
+            # """
+            # if np.mean(rms) < activity_threshold:
+            #     continue
+
             zcr = librosa.feature.zero_crossing_rate(chunk)[0]
 
             rms_expanded = expand_feature(rms, len(chunk))

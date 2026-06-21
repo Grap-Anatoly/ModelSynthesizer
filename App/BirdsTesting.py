@@ -123,6 +123,10 @@ if __name__ == '__main__':
         plt.colorbar()
         plt.show()
 
+    """
+    Export
+    """
+
     def chunks_to_dataframe(X, y, max_points=200):
         rows = []
 
@@ -171,6 +175,10 @@ if __name__ == '__main__':
 
     import pandas as pd
     import numpy as np
+
+    """
+    Util
+    """
 
     def rms_normalize(y, target_rms=0.1):
         rms = np.sqrt(np.mean(y**2))
@@ -565,46 +573,6 @@ if __name__ == '__main__':
     # PROCESS DATASET
     # =========================
 
-    '''Initial'''
-
-    # def process_dataset(dataset_path):
-    #     X = []
-    #     y = []
-    #
-    #     labels = []
-    #
-    #     for label in os.listdir(dataset_path):
-    #         folder_path = os.path.join(dataset_path, label)
-    #
-    #         if not os.path.isdir(folder_path):
-    #             continue
-    #
-    #         labels.append(label)
-    #
-    #         files = [f for f in os.listdir(folder_path) if f.endswith(".wav")]
-    #
-    #         if MAX_FILES_PER_CLASS:
-    #             files = files[:MAX_FILES_PER_CLASS]
-    #
-    #         print(f"\nProcessing class: {label} ({len(files)} files)")
-    #
-    #         for file in tqdm(files):
-    #             full_path = os.path.join(folder_path, file)
-    #
-    #             try:
-    #
-    #                 chunks = process_file(full_path)
-    #
-    #                 for chunk in chunks:
-    #                     X.append(chunk)
-    #                     y.append(label)
-    #
-    #             except Exception as e:
-    #                 print(f"Error processing {file}: {e}")
-    #
-    #     return np.array(X), np.array(y)
-
-
     """
     Main Procession
     Data type (Sound, Spectrogram etc) is chosen after try: cycle starts
@@ -681,16 +649,6 @@ if __name__ == '__main__':
             np.array(X_val), np.array(y_val),
             np.array(X_test), np.array(y_test)
         )
-
-    # =========================
-    # RUN PIPELINE
-    # =========================
-
-    # For audio Data
-    # X, y = process_dataset(DATASET_PATH)
-    # X_train = X_train / (np.max(np.abs(X_train), axis=1, keepdims=True) + 1e-8)
-    # X_val = X_val / (np.max(np.abs(X_val), axis=1, keepdims=True) + 1e-8)
-    # X_test = X_test / (np.max(np.abs(X_test), axis=1, keepdims=True) + 1e-8)
 
     le = LabelEncoder()
 
@@ -1164,15 +1122,6 @@ if __name__ == '__main__':
         print('Model Saved!')
 
 
-    # test_loss, test_acc = model.evaluate(X_test, y_test)
-    # print("Test accuracy:", test_acc)
-    #
-    # y_pred = model.predict(X_test)
-    # y_pred_classes = y_pred.argmax(axis=1)
-    #
-    # print(y_pred)
-    #
-    # print(classification_report(y_test, y_pred_classes))
 
 
 

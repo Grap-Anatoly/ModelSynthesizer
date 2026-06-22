@@ -347,18 +347,18 @@ if __name__ == '__main__':
         """
         Noise detection by RMS percentile
         """
-        # chunk_rms_values = []
-        #
-        # for chunk in chunks:
-        #     chunk = fix_length(chunk, CHUNK_SIZE)
-        #
-        #     rms = librosa.feature.rms(y=chunk)[0]
-        #     chunk_rms_values.append(np.mean(rms))
-        #
-        # activity_threshold = np.percentile(
-        #     chunk_rms_values,
-        #     40
-        # )
+        chunk_rms_values = []
+
+        for chunk in chunks:
+            chunk = fix_length(chunk, CHUNK_SIZE)
+
+            rms = librosa.feature.rms(y=chunk)[0]
+            chunk_rms_values.append(np.mean(rms))
+
+        activity_threshold = np.percentile(
+            chunk_rms_values,
+            40
+        )
 
         for chunk in chunks:
             chunk = fix_length(chunk, CHUNK_SIZE)
@@ -371,8 +371,8 @@ if __name__ == '__main__':
             # """
             # Noise filter (if rms < treshhold) = processing
             # """
-            # if np.mean(rms) < activity_threshold:
-            #     continue
+            if np.mean(rms) < activity_threshold:
+                continue
 
             zcr = librosa.feature.zero_crossing_rate(chunk)[0]
 
@@ -1077,7 +1077,7 @@ if __name__ == '__main__':
 
     early_stop = callbacks.EarlyStopping(
         monitor='val_loss',
-        patience=5,
+        patience=3,
         restore_best_weights=True
     )
 
@@ -1099,6 +1099,12 @@ if __name__ == '__main__':
     y_pred_probs = model.predict(X_test)
     y_pred = y_pred_probs.argmax(axis=1)
 
+    """Add prediction by chunks"""
+
+    # preds = model.predict(chunks)
+    # avg_pred = np.mean(preds, axis=0)
+    # final_class = np.argmax(avg_pred)
+
     from sklearn.metrics import confusion_matrix
     print(confusion_matrix(y_test, y_pred))
 
@@ -1113,13 +1119,29 @@ if __name__ == '__main__':
             config = {
             "sample_rate": SAMPLE_RATE,
             "chunk_size": CHUNK_SIZE,
-            "channels": 3
+            "channels": 3,
+            "features": [
+                "rms",
+                "zcr",
+                "pitch",
+                "pitch_delta",
+                "centroid",
+                "bandwidth",
+                "rolloff",
+                "flatness",
+                "mfcc",
+                "delta_mfcc",
+                "delta2_mfcc"
+            ],
+            "activity_detection": "40th percentile RMS"
         }
 
         with open(f"D:/PythonProjects/MagRobotaData/BirdsData/Models/{modelName}/config.json", "w") as f:
             json.dump(config, f)
 
         print('Model Saved!')
+
+
 
 
 

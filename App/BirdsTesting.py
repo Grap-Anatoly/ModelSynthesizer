@@ -1,16 +1,14 @@
 import os
 
+import tensorflow as tf
 import keras.layers
 import numpy as np
 import librosa
-import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils.class_weight import compute_class_weight
 from tqdm import tqdm
-from collections import Counter
 import pickle
 import json
 
@@ -534,6 +532,10 @@ if __name__ == '__main__':
                 delta2_mfcc
             ], axis=-1)
 
+            print(combined)
+            print(len(combined))
+            print(combined)
+
             # combinedOriginal = np.stack([
             #     normalize_feature(chunk),
             #
@@ -556,6 +558,9 @@ if __name__ == '__main__':
 
         return processed_chunks
 
+
+    features = ["RMS", "ZCR", "Pitch", "Pitch Delta", "Centroid", "Bandwidth", "Rolloff", "Flatness", "mfcc",
+                "delta_mfcc", "delta2_mfcc"]
 
     def normalize_feature(f):
         return (f - np.mean(f)) / (np.std(f) + 1e-8)
@@ -581,6 +586,7 @@ if __name__ == '__main__':
         X_train, y_train = [], []
         X_val, y_val = [], []
         X_test, y_test = [], []
+        test_file_ids = []
 
         for label in os.listdir(dataset_path):
             folder_path = os.path.join(dataset_path, label)
@@ -597,7 +603,10 @@ if __name__ == '__main__':
             val_files, test_files = train_test_split(temp_files, test_size=0.5, random_state=42)
 
             print(f"\nClass: {label}")
-            print(f"Train files: {len(train_files)}, Val files: {len(val_files)}, , Test files: {len(test_files)}")
+            print(f"Train files: {len(train_files)}, Val files: {len(val_files)}, Test files: {len(test_files)}")
+
+            """check for simmilar files in several sets"""
+            BirdsModels.checkIntersections(train_files, val_files, test_files)
 
             for file in tqdm(train_files, desc=f"{label} train"):
                 full_path = os.path.join(folder_path, file)
@@ -641,13 +650,16 @@ if __name__ == '__main__':
                         X_test.append(chunk)
                         y_test.append(label)
 
+                        test_file_ids.append(file)
+
                 except Exception as e:
                     print(f"Error processing {file}: {e}")
 
         return (
             np.array(X_train), np.array(y_train),
             np.array(X_val), np.array(y_val),
-            np.array(X_test), np.array(y_test)
+            np.array(X_test), np.array(y_test),
+            np.array(test_file_ids)
         )
 
     le = LabelEncoder()
@@ -659,6 +671,7 @@ if __name__ == '__main__':
         y_train = np.load("D:/PythonProjects/MagRobotaData/BirdsData/y_train.npy")
         y_val = np.load("D:/PythonProjects/MagRobotaData/BirdsData/y_val.npy")
         y_test = np.load("D:/PythonProjects/MagRobotaData/BirdsData/y_test.npy")
+        test_file_ids = np.load("D:/PythonProjects/MagRobotaData/BirdsData/test_file_ids.npy")
 
         le = LabelEncoder()
 
@@ -692,7 +705,7 @@ if __name__ == '__main__':
         #
         # print(mean_features)
     else:
-        X_train, y_train, X_val, y_val, X_test, y_test = process_dataset_split(DATASET_PATH)
+        X_train, y_train, X_val, y_val, X_test, y_test, test_file_ids = process_dataset_split(DATASET_PATH)
         print("X_train shape:", X_train.shape)
         print("X_val shape:", X_val.shape)
         print("X_test shape:", X_test.shape)
@@ -713,6 +726,7 @@ if __name__ == '__main__':
         np.save("D:/PythonProjects/MagRobotaData/BirdsData/y_train.npy", y_train)
         np.save("D:/PythonProjects/MagRobotaData/BirdsData/y_test.npy", y_test)
         np.save("D:/PythonProjects/MagRobotaData/BirdsData/y_val.npy", y_val)
+        np.save("D:/PythonProjects/MagRobotaData/BirdsData/test_file_ids.npy", test_file_ids)
 
         # export_to_excel(X_train, y_train, le, "train_data.xlsx")
         # export_to_excel(X_val, y_val, le, "validation_data.xlsx")
@@ -1057,13 +1071,6 @@ if __name__ == '__main__':
     ])
 
 
-    # model.compile(
-    #     optimizer='adam',
-    #     loss='categorical_crossentropy',
-    #     metrics=['accuracy']
-    # )
-
-
     model.compile(
         optimizer='Adam',
         loss='sparse_categorical_crossentropy',
@@ -1077,7 +1084,7 @@ if __name__ == '__main__':
 
     early_stop = callbacks.EarlyStopping(
         monitor='val_loss',
-        patience=3,
+        patience=5,
         restore_best_weights=True
     )
 
@@ -1109,6 +1116,10 @@ if __name__ == '__main__':
     print(confusion_matrix(y_test, y_pred))
 
     randomPred = show_random_predictions(X_test, y_test, model, le, n=10)
+
+    # BirdsModels.permutationImportance(X_test, y_test, model, test_acc)
+
+    BirdsModels.accuracyByFile(y_pred, y_test, test_file_ids)
 
     if test_acc >= 0.6 and randomPred >= 5:
         modelName = model.config["type"] + str(f"_{test_acc:.5f}")

@@ -2,6 +2,7 @@ import keras.layers
 import numpy as np
 from scipy.stats import skew, kurtosis
 import tensorflow as tf
+from collections import defaultdict
 
 def extract_global_features(X):
     # X shape (n_samples, 200, 5)
@@ -184,4 +185,90 @@ def rfModel(X_train_rf, X_test_rf, y_train, y_test):
     print(score)
 
     return score
+
+
+
+"""
+Test values
+"""
+
+def permutationImportance(X_test, y_test, model, test_acc):
+    # print(X_test)
+    importanceSum = 0
+
+    for i in range(47):
+        X_perm = X_test.copy()
+
+        np.random.shuffle(
+            X_perm[:, :, i]
+        )
+
+        acc = model.evaluate(
+            X_perm,
+            y_test,
+            verbose=0
+        )[1]
+
+        importanceSum += test_acc - acc
+
+        print(f"{i} importance:", test_acc - acc)
+    print(importanceSum)
+
+def checkIntersections(train_files, val_files, test_files):
+    common_files = list(set(train_files).intersection(val_files, test_files))
+
+    print("Files in all 3 lists:", common_files)
+
+    print(
+        "Train-Val:",
+        len(set(train_files) & set(val_files))
+    )
+
+    print(
+        "Train-Test:",
+        len(set(train_files) & set(test_files))
+    )
+
+    print(
+        "Val-Test:",
+        len(set(val_files) & set(test_files))
+    )
+
+def accuracyByFile(y_pred, y_test, test_file_ids):
+
+    file_probs = defaultdict(list)
+    file_labels = {}
+
+    for probs, file_id, true_label in zip(
+            y_pred,
+            test_file_ids,
+            y_test):
+        file_probs[file_id].append(probs)
+
+        file_labels[file_id] = true_label
+
+    correct = 0
+    total = 0
+
+    for file_id in file_probs:
+
+        avg_probs = np.mean(
+            file_probs[file_id],
+            axis=0
+        )
+
+        pred_class = np.argmax(avg_probs)
+
+        true_class = file_labels[file_id]
+
+        if pred_class == true_class:
+            correct += 1
+
+        total += 1
+
+        print("\nFile:", file_id)
+        print("True:", true_class)
+        print("Pred:", pred_class)
+        print("Confidence:",
+              np.max(avg_probs))
 

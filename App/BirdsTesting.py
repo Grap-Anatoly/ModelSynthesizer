@@ -532,9 +532,9 @@ if __name__ == '__main__':
                 delta2_mfcc
             ], axis=-1)
 
-            print(combined)
-            print(len(combined))
-            print(combined)
+            # print(combined)
+            # print(len(combined))
+            # print(combined)
 
             # combinedOriginal = np.stack([
             #     normalize_feature(chunk),
@@ -854,20 +854,6 @@ if __name__ == '__main__':
         print(f"Result: {res}/{n}")
         return res
 
-    # model = Sequential([
-    #     Conv1D(16, 5, activation='relu', input_shape=(CHUNK_SIZE, 1), kernel_regularizer=regularizers.l2(0.001)),
-    #     # Conv1D(32, 5, activation='relu', input_shape=(CHUNK_SIZE, 1), kernel_regularizer=regularizers.l2(0.001)),
-    #     MaxPooling1D(2),
-    #     keras.layers.Dropout(0.3),
-    #     Conv1D(32, 5, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-    #     # Conv1D(64, 5, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-    #     MaxPooling1D(2),
-    #     keras.layers.Dropout(0.2),
-    #     Flatten(),
-    #     Dense(64, activation='relu'),
-    #     Dense(len(np.unique(y_train)), activation='softmax')
-    # ])
-
     """
     70% on 30 epochs
     - Amp
@@ -1070,6 +1056,38 @@ if __name__ == '__main__':
         Dense(len(np.unique(y_train)), activation='softmax')
     ])
 
+    modelConvLSTMSimle = Sequential([
+        Conv1D(64, 3, padding='same', activation='relu', input_shape=(X_train.shape[1], X_train.shape[2])),
+        keras.layers.BatchNormalization(),
+        Conv1D(128, 3, padding='same', activation='relu'),
+        keras.layers.BatchNormalization(),
+        keras.layers.MaxPooling1D(2),
+        keras.layers.Bidirectional(keras.layers.LSTM(64,return_sequences=False)),
+        Dense(128, activation='relu'),
+        keras.layers.Dropout(0.4),
+        Dense(len(np.unique(y_train)), activation='softmax')
+    ])
+
+    model5ConvLayers = Sequential([
+        Conv1D(64, 5, padding='same', activation='relu',
+               input_shape=(X_train.shape[1], X_train.shape[2])),
+        keras.layers.BatchNormalization(),
+        Conv1D(64, 5, padding='same', activation='relu'),
+        keras.layers.BatchNormalization(),
+        MaxPooling1D(2),
+        Conv1D(128, 3, padding='same', activation='relu'),
+        keras.layers.BatchNormalization(),
+        Conv1D(128, 3, padding='same', activation='relu'),
+        keras.layers.BatchNormalization(),
+        MaxPooling1D(2),
+        Conv1D(256, 3, padding='same', activation='relu'),
+        keras.layers.BatchNormalization(),
+        keras.layers.GlobalAveragePooling1D(),
+        Dense(256, activation='relu'),
+        keras.layers.Dropout(0.5),
+        Dense(len(np.unique(y_train)), activation='softmax')
+    ])
+
 
     model.compile(
         optimizer='Adam',
@@ -1106,20 +1124,16 @@ if __name__ == '__main__':
     y_pred_probs = model.predict(X_test)
     y_pred = y_pred_probs.argmax(axis=1)
 
-    """Add prediction by chunks"""
-
-    # preds = model.predict(chunks)
-    # avg_pred = np.mean(preds, axis=0)
-    # final_class = np.argmax(avg_pred)
-
     from sklearn.metrics import confusion_matrix
     print(confusion_matrix(y_test, y_pred))
 
     randomPred = show_random_predictions(X_test, y_test, model, le, n=10)
 
-    # BirdsModels.permutationImportance(X_test, y_test, model, test_acc)
-
-    BirdsModels.accuracyByFile(y_pred, y_test, test_file_ids)
+    """Prediction by chunks with file name, true and pred chunk"""
+    BirdsModels.accuracyByFile(y_pred_probs, y_test, test_file_ids)
+    """Prediction by file with file name, true and pred class, number of correct predictions of all number of chunks
+    and TRUE of FALSE result"""
+    BirdsModels.filePredictions(model, X_test, y_test, test_file_ids)
 
     if test_acc >= 0.6 and randomPred >= 5:
         modelName = model.config["type"] + str(f"_{test_acc:.5f}")

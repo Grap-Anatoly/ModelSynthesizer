@@ -234,21 +234,22 @@ def checkIntersections(train_files, val_files, test_files):
         len(set(val_files) & set(test_files))
     )
 
-def accuracyByFile(y_pred, y_test, test_file_ids):
+def accuracyByFile(y_probs, y_test, test_file_ids):
+
+    #print(test_file_ids)
 
     file_probs = defaultdict(list)
     file_labels = {}
 
     for probs, file_id, true_label in zip(
-            y_pred,
+            y_probs,
             test_file_ids,
             y_test):
-        file_probs[file_id].append(probs)
 
+        file_probs[file_id].append(probs)
         file_labels[file_id] = true_label
 
     correct = 0
-    total = 0
 
     for file_id in file_probs:
 
@@ -257,18 +258,67 @@ def accuracyByFile(y_pred, y_test, test_file_ids):
             axis=0
         )
 
-        pred_class = np.argmax(avg_probs)
+        pred = np.argmax(avg_probs)
 
-        true_class = file_labels[file_id]
+        confidence = np.max(avg_probs)
 
-        if pred_class == true_class:
+        true = file_labels[file_id]
+
+        print()
+        print("File:", file_id)
+        print("True:", true)
+        print("Pred:", pred)
+        print("Confidence:", confidence)
+
+        if pred == true:
             correct += 1
 
-        total += 1
+def filePredictions(model, X_test, y_test, test_file_ids):
+    y_probs = model.predict(X_test)
+    y_pred_chunks = np.argmax(y_probs, axis=1)
 
-        print("\nFile:", file_id)
-        print("True:", true_class)
-        print("Pred:", pred_class)
-        print("Confidence:",
-              np.max(avg_probs))
+    # Group information by file
+    file_chunk_preds = defaultdict(list)
+    file_chunk_true = defaultdict(list)
+    file_chunk_probs = defaultdict(list)
+
+    for pred, true, probs, file_id in zip(
+            y_pred_chunks,
+            y_test,
+            y_probs,
+            test_file_ids):
+        file_chunk_preds[file_id].append(pred)
+        file_chunk_true[file_id].append(true)
+        file_chunk_probs[file_id].append(probs)
+
+    # Analyze each file
+    for file_id in file_chunk_preds:
+
+        chunk_preds = np.array(file_chunk_preds[file_id])
+        chunk_true = np.array(file_chunk_true[file_id])
+
+        true_label = chunk_true[0]
+
+        # chunk accuracy
+        correct_chunks = np.sum(chunk_preds == true_label)
+        total_chunks = len(chunk_preds)
+
+        # file prediction from averaged probabilities
+        avg_probs = np.mean(
+            file_chunk_probs[file_id],
+            axis=0
+        )
+
+        file_pred = np.argmax(avg_probs)
+
+        print()
+        print(f"File: {file_id}")
+        print(f"True class: {true_label}")
+        print(f"File prediction: {file_pred}")
+        print(f"Correct chunks: {correct_chunks}/{total_chunks}")
+
+        if file_pred == true_label:
+            print("Result: TRUE")
+        else:
+            print("Result: FALSE")
 

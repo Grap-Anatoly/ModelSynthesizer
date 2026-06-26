@@ -45,18 +45,13 @@ if __name__ == '__main__':
     # For AudioData
 
     SAMPLE_RATE = 22050
-    # SAMPLE_RATE = 16000
-    # SAMPLE_RATE = 8000
     CHUNK_DURATION = 3.0  # seconds
-    # CHUNK_DURATION = 1.5  # seconds
     CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
     # 20 is default
     MAX_FILES_PER_CLASS = 50
     TARGET_CHUNKS = 150
 
-    # =========================
-    # PLOTS
-    # =========================
+    """PLOTS"""
 
     def plot_grid(X, y, num=15):
         plt.figure(figsize=(12, 8))
@@ -124,7 +119,6 @@ if __name__ == '__main__':
     """
     Export
     """
-
     def chunks_to_dataframe(X, y, max_points=200):
         rows = []
 
@@ -177,7 +171,6 @@ if __name__ == '__main__':
     """
     Util
     """
-
     def rms_normalize(y, target_rms=0.1):
         rms = np.sqrt(np.mean(y**2))
         if rms == 0:
@@ -200,31 +193,6 @@ if __name__ == '__main__':
             chunks.append(chunk)
         return chunks
 
-
-    # =========================
-    # PROCESS SINGLE FILE
-    # =========================
-    # def chunk_to_mel(chunk, sr=22050, n_mels=128, n_fft=1024, hop_length=512):
-    #     # Mel spectrogram
-    #     mel = librosa.feature.melspectrogram(
-    #         y=chunk,
-    #         sr=sr,
-    #         n_mels=n_mels,
-    #         n_fft=n_fft,
-    #         hop_length=hop_length,
-    #         fmin=1000,
-    #         fmax=10000
-    #     )
-    #
-    #     # Convert to log scale (VERY important)
-    #     mel_db = librosa.power_to_db(mel, ref=np.max)
-    #
-    #     # Normalize
-    #     mel_db = (mel_db - np.mean(mel_db)) / (np.std(mel_db) + 1e-8)
-    #
-    #     return mel_db
-
-
     def fix_spectrogram_size(mel, target_width=130):
         current_width = mel.shape[1]
 
@@ -238,6 +206,9 @@ if __name__ == '__main__':
 
         return mel
 
+    """
+    Process Files
+    """
     def process_file(file_path):
         y, sr = librosa.load(file_path, sr=SAMPLE_RATE)
 
@@ -303,9 +274,6 @@ if __name__ == '__main__':
             # Convert to log scale (VERY important)
             mel_db = librosa.power_to_db(mel, ref=np.max)
 
-            # =========================
-            # BIRD ACTIVITY FILTER
-            # =========================
             energy = np.mean(mel_db)
             if energy < -60:
                 continue
@@ -366,9 +334,9 @@ if __name__ == '__main__':
             """
             rms = librosa.feature.rms(y=chunk)[0]
 
-            # """
-            # Noise filter (if rms < treshhold) = processing
-            # """
+            """"
+            Noise filter (if rms < treshhold) = processing
+            """
             if np.mean(rms) < activity_threshold:
                 continue
 
@@ -565,7 +533,6 @@ if __name__ == '__main__':
     def normalize_feature(f):
         return (f - np.mean(f)) / (np.std(f) + 1e-8)
 
-
     def downsample_sequence(data, factor=10):
         # data shape: (samples, time, features)
         samples, time_steps, feat = data.shape
@@ -574,9 +541,6 @@ if __name__ == '__main__':
         trimmed = data[:, :new_length * factor, :]
         # Reshape and mean over the factor dimension
         return trimmed.reshape(samples, new_length, factor, feat).mean(axis=2)
-    # =========================
-    # PROCESS DATASET
-    # =========================
 
     """
     Main Procession
@@ -779,49 +743,9 @@ if __name__ == '__main__':
     print(class_weights)
     print(Counter(y_train))
 
-    # features = [
-    #     "rms",
-    #     "zcr",
-    #     "pitch",
-    #     "pitch_delta",
-    #     "centroid",
-    #     "bandwidth",
-    #     "rolloff",
-    #     "flatness",
-    #     "mfcc",
-    #     "delta_mfcc",
-    #     "delta2_mfcc"
-    # ]
-    #
-    # for cls in np.unique(y_train):
-    #     idx = np.where(y_train == cls)[0]
-    #
-    #     print(f"\nClass {cls}")
-    #
-    #     mean_feat = X_train[idx][:, :, :11].mean(axis=(0, 1))
-    #
-    #     for f, v in zip(features, mean_feat):
-    #         print(f"{f}: {v:.3f}")
-
-    # plot_spectrogram_grid(
-    #     X_train,
-    #     y_train,
-    #     label_encoder=le,
-    #     rows=3,
-    #     cols=3
-    # )
-
-    # X_train_rf = np.concatenate([
-    #     X_train.mean(axis=1),
-    #     X_train.std(axis=1)
-    # ], axis=1)
-    #
-    # X_test_rf = np.concatenate([
-    #     X_test.mean(axis=1),
-    #     X_test.std(axis=1)
-    # ], axis=1)
-
-
+    """
+    Predictions
+    """
     def show_random_predictions(X, y_true, model, label_encoder, n):
         indices = np.random.choice(len(X), n, replace=False)
         res = 0
@@ -962,11 +886,6 @@ if __name__ == '__main__':
     modelCnn = BirdsModels.build_Cnn_model((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
 
     """
-    Bad
-    """
-    modelCnnLSTM = BirdsModels.build_cnn_lstm((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
-
-    """
     test
     """
 
@@ -1005,30 +924,6 @@ if __name__ == '__main__':
     #     Dense(len(np.unique(y_train)), activation='softmax')
     # ])
 
-    """
-    MultiFeature
-    Low Epochs - Good learning - Bad Testing
-    """
-
-    # modelLowEpochs = Sequential([
-    #     Conv1D(64, kernel_size=9, padding='same', activation='relu',  input_shape=(X_train.shape[1], X_train.shape[2])),
-    #     keras.layers.BatchNormalization(),
-    #     MaxPooling1D(8),
-    #     Conv1D(128, kernel_size=7, padding='same', activation='relu'),
-    #     keras.layers.BatchNormalization(),
-    #     MaxPooling1D(8),
-    #     Conv1D(256, kernel_size=5, padding='same', activation='relu'),
-    #     keras.layers.BatchNormalization(),
-    #     MaxPooling1D(4),
-    #     Conv1D(512, kernel_size=3, padding='same', activation='relu'),
-    #     keras.layers.BatchNormalization(),
-    #     keras.layers.GlobalAveragePooling1D(),
-    #     Dense(256, activation='relu'),
-    #     keras.layers.Dropout(0.5),
-    #     Dense(128, activation='relu'),
-    #     keras.layers.Dropout(0.3),
-    #     Dense(len(np.unique(y_train)), activation='softmax')
-    # ])
 
     # modelShort = Sequential([
     #     Conv1D(32, kernel_size=7, activation='relu', padding='same', input_shape=(X_train.shape[1], X_train.shape[2])),

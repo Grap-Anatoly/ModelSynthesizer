@@ -778,23 +778,6 @@ if __name__ == '__main__':
         print(f"Result: {res}/{n}")
         return res
 
-    """
-    70% on 30 epochs
-    - Amp
-    - RMS
-    - ZCR
-    """
-
-    modelLotsofEpochs = Sequential([
-        Conv1D(64, 5, activation='relu', input_shape=(CHUNK_SIZE, 3)),
-        MaxPooling1D(2),
-        Conv1D(32, 5, activation='relu'),
-        MaxPooling1D(2),
-        keras.layers.Dropout(0.2),
-        keras.layers.GlobalAveragePooling1D(),
-        Dense(len(np.unique(y_train)), activation='softmax')
-    ])
-
     """Spectrogram"""
 
     # modelSpectrogram = Sequential([
@@ -811,24 +794,6 @@ if __name__ == '__main__':
     #     Dense(len(np.unique(y_train)), activation='softmax')
     # ])
 
-    """
-    Good?
-    """
-
-    # model = Sequential([
-    #     Conv2D(32, (3, 3), activation='relu',
-    #            input_shape=(X_train.shape[1], X_train.shape[2], 1)),
-    #     keras.layers.BatchNormalization(),
-    #     MaxPooling2D((2, 2)),
-    #     Conv2D(64, (3, 3), activation='relu'),
-    #     MaxPooling2D((2, 2)),
-    #     Conv2D(128, (3, 3), activation='relu'),
-    #     MaxPooling2D((2, 2)),
-    #     Flatten(),
-    #     Dense(128, activation='relu'),
-    #     keras.layers.Dropout(0.5),
-    #     Dense(len(np.unique(y_train)), activation='softmax')
-    # ])
 
     modelConv = Sequential([
         # Conv1D(32, 5, activation='relu', kernel_regularizer=regularizers.l2(0.001), input_shape=(CHUNK_SIZE, 1)),
@@ -906,25 +871,6 @@ if __name__ == '__main__':
     """
     modelInception = BirdsModels.build_inception_time((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
 
-    """
-    Not Bad
-    """
-
-    # model4Conv = Sequential([
-    #     Conv1D(64, 9, activation='relu',input_shape=(X_train.shape[1], X_train.shape[2])),
-    #     MaxPooling1D(8),
-    #     Conv1D(128, 7, activation='relu'),
-    #     MaxPooling1D(8),
-    #     Conv1D(256, 5, activation='relu'),
-    #     MaxPooling1D(4),
-    #     Conv1D(512, 3, activation='relu'),
-    #     keras.layers.GlobalAveragePooling1D(),
-    #     Dense(256, activation='relu'),
-    #     keras.layers.Dropout(0.5),
-    #     Dense(len(np.unique(y_train)), activation='softmax')
-    # ])
-
-
     # modelShort = Sequential([
     #     Conv1D(32, kernel_size=7, activation='relu', padding='same', input_shape=(X_train.shape[1], X_train.shape[2])),
     #     MaxPooling1D(16),
@@ -951,7 +897,7 @@ if __name__ == '__main__':
         Dense(len(np.unique(y_train)), activation='softmax')
     ])
 
-    modelConvLSTMSimle = Sequential([
+    modelConvLSTMSimple = Sequential([
         Conv1D(64, 3, padding='same', activation='relu', input_shape=(X_train.shape[1], X_train.shape[2])),
         keras.layers.BatchNormalization(),
         Conv1D(128, 3, padding='same', activation='relu'),

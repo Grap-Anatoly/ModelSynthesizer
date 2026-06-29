@@ -19,6 +19,12 @@ from keras.layers import Conv1D, MaxPooling1D, Conv2D, MaxPooling2D, Flatten, De
 from keras import regularizers, callbacks
 import BirdsModels
 
+"""
+- To Do: Feature importance, new data sets one by one without one feature x-y=i (importance)
+- Main cycle - data transformation
+"""
+
+
 if __name__ == '__main__':
 
     keras.backend.clear_session()

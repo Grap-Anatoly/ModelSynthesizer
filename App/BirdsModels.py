@@ -147,25 +147,6 @@ def transformer_encoder(x, num_heads=4, ff_dim=64, dropout=0.3):
     return ffn
 
 """
-For large number of samples (Error)
-"""
-def build_transformer(input_shape, num_classes):
-    inputs = keras.Input(shape=input_shape)
-    # Add positional encoding (learned or fixed)
-    pos_enc = keras.layers.Embedding(input_dim=input_shape[0], output_dim=input_shape[-1])(tf.range(input_shape[0]))
-    x = inputs + pos_enc
-
-    # Two shallow transformer blocks
-    x = transformer_encoder(x, num_heads=2, ff_dim=32, dropout=0.3)
-    x = transformer_encoder(x, num_heads=2, ff_dim=32, dropout=0.3)
-
-    # Pool and classify
-    x = keras.layers.GlobalAveragePooling1D()(x)
-    x = keras.layers.Dropout(0.4)(x)
-    outputs = keras.layers.Dense(num_classes, activation='softmax')(x)
-    return keras.Model(inputs, outputs)
-
-"""
 Random forest
 """
 

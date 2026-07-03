@@ -830,7 +830,7 @@ if __name__ == '__main__':
     """
 
     modelSeveralDenseBlocks = Sequential([
-        keras.layers.Input(shape=(CHUNK_SIZE, 3)),
+        keras.layers.Input(shape=(X_train.shape[1], X_train.shape[2])),
         # First dense block
         keras.layers.Dense(64, activation='relu'),
         keras.layers.BatchNormalization(),
@@ -858,11 +858,19 @@ if __name__ == '__main__':
     modelCnn = BirdsModels.build_Cnn_model((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
 
     """
+    70% 
+    20 samples per file
+    Long time, 10 > Epochs
+    """
+    modelInception = BirdsModels.build_inception_time((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
+
+
+    """
     test
     """
 
     modelTest = Sequential([
-        Conv1D(64, 7, activation='relu', input_shape=(CHUNK_SIZE, 3)),
+        Conv1D(64, 7, activation='relu', input_shape=(X_train.shape[1], X_train.shape[2])),
         MaxPooling1D(8),
         Conv1D(128, 5, activation='relu'),
         MaxPooling1D(8),
@@ -871,23 +879,6 @@ if __name__ == '__main__':
         keras.layers.Dropout(0.3),
         Dense(len(np.unique(y_train)), activation='softmax')
     ])
-    """
-    70% 
-    20 samples per file
-    Long time, 10 > Epochs
-    """
-    modelInception = BirdsModels.build_inception_time((X_train.shape[1], X_train.shape[2]), len(np.unique(y_train)))
-
-    # modelShort = Sequential([
-    #     Conv1D(32, kernel_size=7, activation='relu', padding='same', input_shape=(X_train.shape[1], X_train.shape[2])),
-    #     MaxPooling1D(16),
-    #     Conv1D(64, kernel_size=5, activation='relu', padding='same'),
-    #     MaxPooling1D(16),
-    #     keras.layers.GlobalAveragePooling1D(),
-    #     Dense(128, activation='relu'),
-    #     keras.layers.Dropout(0.5),
-    #     Dense(len(np.unique(y_train)), activation='softmax')
-    # ])
 
     model = Sequential([
         Conv1D(32, kernel_size=5, activation='relu', padding='same', input_shape=(X_train.shape[1], X_train.shape[2])),

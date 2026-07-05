@@ -167,8 +167,6 @@ def rfModel(X_train_rf, X_test_rf, y_train, y_test):
 
     return score
 
-
-
 """
 Test values
 """

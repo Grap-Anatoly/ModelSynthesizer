@@ -126,6 +126,7 @@ if __name__ == '__main__':
     """
     Export
     """
+
     def chunks_to_dataframe(X, y, max_points=200):
         rows = []
 
@@ -506,10 +507,6 @@ if __name__ == '__main__':
                 delta_mfcc,
                 delta2_mfcc
             ], axis=-1)
-
-            # print(combined)
-            # print(len(combined))
-            # print(combined)
 
             # combinedOriginal = np.stack([
             #     normalize_feature(chunk),

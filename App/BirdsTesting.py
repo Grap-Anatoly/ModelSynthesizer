@@ -20,9 +20,11 @@ from keras import regularizers, callbacks
 import BirdsModels
 
 """
+
 - To Do: Feature importance, new data sets one by one without one feature x-y=i (importance)
 - Main cycle - data transformation
 - Multiple models for different data in model types 
+
 """
 
 

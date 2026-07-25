@@ -502,7 +502,7 @@ if __name__ == '__main__':
                 f0_rehsaped,
                 pitch_delta_rehsaped,
                 centroid_rehsaped,
-                bandwidth_rehsaped,
+                # bandwidth_rehsaped,
                 rolloff_rehsaped,
                 flatness_rehsaped,
                 mfcc,
@@ -697,6 +697,9 @@ if __name__ == '__main__':
         np.save("D:/PythonProjects/MagRobotaData/BirdsData/y_test.npy", y_test)
         np.save("D:/PythonProjects/MagRobotaData/BirdsData/y_val.npy", y_val)
         np.save("D:/PythonProjects/MagRobotaData/BirdsData/test_file_ids.npy", test_file_ids)
+
+        import sys
+        sys.exit()
 
         # export_to_excel(X_train, y_train, le, "train_data.xlsx")
         # export_to_excel(X_val, y_val, le, "validation_data.xlsx")

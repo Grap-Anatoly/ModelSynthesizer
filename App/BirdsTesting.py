@@ -501,10 +501,10 @@ if __name__ == '__main__':
                 zcr_rehsaped,
                 f0_rehsaped,
                 pitch_delta_rehsaped,
-                centroid_rehsaped,
+                # centroid_rehsaped,
                 # bandwidth_rehsaped,
-                rolloff_rehsaped,
-                flatness_rehsaped,
+                # rolloff_rehsaped,
+                # flatness_rehsaped,
                 mfcc,
                 delta_mfcc,
                 delta2_mfcc

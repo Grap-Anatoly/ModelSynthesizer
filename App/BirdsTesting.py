@@ -698,9 +698,6 @@ if __name__ == '__main__':
         np.save("D:/PythonProjects/MagRobotaData/BirdsData/y_val.npy", y_val)
         np.save("D:/PythonProjects/MagRobotaData/BirdsData/test_file_ids.npy", test_file_ids)
 
-        import sys
-        sys.exit()
-
         # export_to_excel(X_train, y_train, le, "train_data.xlsx")
         # export_to_excel(X_val, y_val, le, "validation_data.xlsx")
         # export_to_excel(X_test, y_test, le, "test_data.xlsx")
@@ -968,7 +965,7 @@ if __name__ == '__main__':
     from sklearn.metrics import confusion_matrix
     print(confusion_matrix(y_test, y_pred))
 
-    randomPred = show_random_predictions(X_test, y_test, model, le, n=10)
+    randomPred = show_random_predictions(X_test, y_test, model, le, n=20)
 
     """Prediction by chunks with file name, true and pred chunk"""
     BirdsModels.accuracyByFile(y_pred_probs, y_test, test_file_ids)

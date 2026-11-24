@@ -1,3 +1,5 @@
+import os
+
 # Write to Excel, Graphs, Numpy
 import xlsxwriter as xls
 import matplotlib.pyplot as plt
@@ -5,6 +7,10 @@ import numpy as np
 import librosa
 import pathlib
 import pandas as pd
+
+from tqdm import tqdm
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
 # PyDub for cutting audio into chunks
 from pydub import AudioSegment
 from pydub.utils import make_chunks
@@ -389,6 +395,459 @@ def processFilesNpy(filesFolder, filesList, allyPointer, rangeStart, rangeEnd, s
 
     np.save(f"{savePath}/X_{name}.npy", X)
     np.save(f"{savePath}/y_{name}.npy", Y)
+
+def processFilesNpyComplex(filesFolder, filesList, allyPointer, rangeStart, rangeEnd, savePath, pBar, consoleOutput):
+
+    # 22050
+    SAMPLE_RATE = rangeEnd
+    CHUNK_DURATION = 3.0  # seconds
+    CHUNK_SIZE = int(SAMPLE_RATE * CHUNK_DURATION)
+    # 20 is default
+    MAX_FILES_PER_CLASS = 50
+    TARGET_CHUNKS = 150
+
+    DATASET_PATH = filesFolder
+
+    features = ["RMS", "ZCR", "Pitch", "Pitch Delta", "Centroid", "Bandwidth", "Rolloff", "Flatness", "mfcc",
+                "delta_mfcc", "delta2_mfcc"]
+
+    X_train, y_train, X_val, y_val, X_test, y_test, test_file_ids = process_dataset_split(DATASET_PATH, MAX_FILES_PER_CLASS,
+                                                                                          SAMPLE_RATE, CHUNK_SIZE, pBar)
+    print("X_train shape:", X_train.shape)
+    print("X_val shape:", X_val.shape)
+    print("X_test shape:", X_test.shape)
+
+    # Encode labels
+    le = LabelEncoder()
+    # y_encoded = le.fit_transform(y)
+
+    y_train = le.fit_transform(y_train)
+    y_val = le.transform(y_val)
+    y_test = le.transform(y_test)
+
+    print(len(np.unique(y_train)))
+
+    np.save(f"{savePath}X_train.npy", X_train)
+    np.save(f"{savePath}X_val.npy", X_val)
+    np.save(f"{savePath}X_test.npy", X_test)
+    np.save(f"{savePath}y_train.npy", y_train)
+    np.save(f"{savePath}y_test.npy", y_test)
+    np.save(f"{savePath}y_val.npy", y_val)
+    np.save(f"{savePath}test_file_ids.npy", test_file_ids)
+
+
+
+def chunks_to_dataframe(X, y, max_points=200):
+    rows = []
+
+    for i in range(len(X)):
+        chunk = X[i].squeeze()
+
+        # optionally downsample for readability
+        if len(chunk) > max_points:
+            step = len(chunk) // max_points
+            chunk = chunk[::step]
+
+        row = {"label": y[i]}
+
+        for j, val in enumerate(chunk):
+            row[f"x{j}"] = val
+
+        rows.append(row)
+
+    return pd.DataFrame(rows)
+
+"""
+Util for complex data
+"""
+def rms_normalize(y, target_rms=0.1):
+    rms = np.sqrt(np.mean(y**2))
+    if rms == 0:
+        return y
+    return y * (target_rms / rms)
+
+def fix_length(chunk, size):
+    if len(chunk) < size:
+        # pad with zeros
+        return np.pad(chunk, (0, size - len(chunk)))
+    else:
+        return chunk[:size]
+
+def split_into_chunks(y, chunk_size):
+    chunks = []
+    for i in range(0, len(y), chunk_size):
+        chunk = y[i:i + chunk_size]
+        if len(chunk) < chunk_size:
+            continue  # skip small tail (or pad if you prefer)
+        chunks.append(chunk)
+    return chunks
+
+def fix_spectrogram_size(mel, target_width=130):
+    current_width = mel.shape[1]
+
+    if current_width < target_width:
+        # pad with zeros
+        pad_width = target_width - current_width
+        mel = np.pad(mel, ((0, 0), (0, pad_width)))
+    else:
+        # crop
+        mel = mel[:, :target_width]
+
+    return mel
+
+def process_file_multifeature(file_path, SAMPLE_RATE, CHUNK_SIZE):
+    y, sr = librosa.load(file_path, sr=SAMPLE_RATE)
+
+    # Normalize
+    y = rms_normalize(y)
+
+    # Split into chunks
+    chunks = split_into_chunks(y, CHUNK_SIZE)
+    # chunks = split_into_chunks(y, CHUNK_SIZE, 1)
+
+    """
+    Resize to match chunk length
+    """
+    def expand_feature(feature, target_length):
+        return np.interp(
+            np.linspace(0, len(feature), num=target_length),
+            np.arange(len(feature)),
+            feature
+        )
+
+    processed_chunks = []
+    """
+    Noise detection by RMS percentile
+    """
+    chunk_rms_values = []
+
+    for chunk in chunks:
+        chunk = fix_length(chunk, CHUNK_SIZE)
+
+        rms = librosa.feature.rms(y=chunk)[0]
+        chunk_rms_values.append(np.mean(rms))
+
+    activity_threshold = np.percentile(
+        chunk_rms_values,
+        40
+    )
+
+    for chunk in chunks:
+        chunk = fix_length(chunk, CHUNK_SIZE)
+
+        """
+        RMS and ZCR
+        """
+        rms = librosa.feature.rms(y=chunk)[0]
+
+        """"
+        Noise filter (if rms < treshhold) = processing
+        """
+        if np.mean(rms) < activity_threshold:
+            continue
+
+        zcr = librosa.feature.zero_crossing_rate(chunk)[0]
+
+        rms_expanded = expand_feature(rms, len(chunk))
+        zcr_expanded = expand_feature(zcr, len(chunk))
+
+        """
+        Pitch
+        """
+
+        f0, voiced_flag, voiced_probs = librosa.pyin(
+            chunk,
+            fmin=librosa.note_to_hz('C2'),
+            fmax=librosa.note_to_hz('C7')
+        )
+
+        f0 = np.nan_to_num(f0)
+        pitch_expanded = expand_feature(f0, len(chunk))
+
+        """
+        Harmonic energy
+        """
+
+        harmonic, percussive = librosa.effects.hpss(chunk)
+
+        harmonic_rms = librosa.feature.rms(y=harmonic)[0]
+        harmonic_expanded = expand_feature(
+            harmonic_rms,
+            len(chunk)
+        )
+
+        """
+        Frequency Modulation
+        """
+
+        pitch_delta = np.gradient(f0)
+
+        pitch_delta_expanded = expand_feature(
+            pitch_delta,
+            len(chunk)
+        )
+
+        """
+        Spectral Centroid
+        """
+
+        centroid = librosa.feature.spectral_centroid(
+            y=chunk,
+            sr=sr
+        )[0]
+
+        centroid_expanded = expand_feature(
+            centroid,
+            len(chunk)
+        )
+
+        """
+        Spectral Bandwidth
+        """
+
+        bandwidth = librosa.feature.spectral_bandwidth(
+            y=chunk,
+            sr=sr
+        )[0]
+
+        bandwidth_expanded = expand_feature(
+            bandwidth,
+            len(chunk)
+        )
+
+        """
+        Spectral rolloff
+        """
+
+        rolloff = librosa.feature.spectral_rolloff(
+            y=chunk,
+            sr=sr
+        )[0]
+
+        rolloff_expanded = expand_feature(
+            rolloff,
+            len(chunk)
+        )
+
+        """
+        Spectral flatness
+        """
+
+        flatness = librosa.feature.spectral_flatness(
+            y=chunk
+        )[0]
+
+        flatness_expanded = expand_feature(
+            flatness,
+            len(chunk)
+        )
+
+        """
+        Syllable Structure
+        """
+
+        energy = librosa.feature.rms(y=chunk)[0]
+        threshold = np.mean(energy)
+        syllables = energy > threshold
+        syllable_count = np.sum(
+            np.diff(syllables.astype(int)) == 1
+        )
+
+        syllable_feature = np.full(
+            len(chunk),
+            syllable_count
+        )
+
+        """
+        MFCC
+        """
+
+        mfcc = librosa.feature.mfcc(
+            y=chunk,
+            sr=sr,
+            n_mfcc=13
+        )
+
+        delta_mfcc = librosa.feature.delta(mfcc)
+        delta2_mfcc = librosa.feature.delta(mfcc, order=2)
+
+        delta_mfcc = delta_mfcc.T
+        delta2_mfcc = delta2_mfcc.T
+
+        # =========================
+        # Stack channels
+        # =========================
+
+        rms_rehsaped = rms.reshape(-1, 1)
+        zcr_rehsaped = zcr.reshape(-1, 1)
+        f0_rehsaped = f0.reshape(-1, 1)
+        pitch_delta_rehsaped = pitch_delta.reshape(-1, 1)
+        centroid_rehsaped = centroid.reshape(-1, 1)
+        bandwidth_rehsaped = bandwidth.reshape(-1, 1)
+        rolloff_rehsaped = rolloff.reshape(-1, 1)
+        flatness_rehsaped = flatness.reshape(-1, 1)
+
+        mfcc = mfcc.T
+
+        # print(rms.shape)
+        # print(mfcc.shape)
+
+        combined = np.concatenate([
+            rms_rehsaped,
+            zcr_rehsaped,
+            f0_rehsaped,
+            pitch_delta_rehsaped,
+            centroid_rehsaped,
+            bandwidth_rehsaped,
+            rolloff_rehsaped,
+            flatness_rehsaped,
+            mfcc,
+            delta_mfcc,
+            delta2_mfcc
+        ], axis=-1)
+
+        # combinedOriginal = np.stack([
+        #     normalize_feature(chunk),
+        #
+        #     rms_expanded,
+        #     zcr_expanded,
+        #     pitch_expanded,
+        #     harmonic_expanded,
+        #     pitch_delta_expanded,
+        #     centroid_expanded,
+        #     bandwidth_expanded,
+        #     rolloff_expanded,
+        #     flatness_expanded,
+        #     # mfcc
+        #     # mfcc,
+        #     # syllable_feature
+        # ], axis=-1)
+
+        # print(combined.shape)
+        processed_chunks.append(combined)
+
+    return processed_chunks
+
+def normalize_feature(f):
+    return (f - np.mean(f)) / (np.std(f) + 1e-8)
+
+def downsample_sequence(data, factor=10):
+    # data shape: (samples, time, features)
+    samples, time_steps, feat = data.shape
+    new_length = time_steps // factor
+    # Trim to a multiple of factor
+    trimmed = data[:, :new_length * factor, :]
+    # Reshape and mean over the factor dimension
+    return trimmed.reshape(samples, new_length, factor, feat).mean(axis=2)
+
+"""
+Main Procession
+Data type (Sound, Spectrogram etc) is chosen after try: cycle starts
+"""
+def process_dataset_split(dataset_path, MAX_FILES_PER_CLASS, SAMPLE_RATE, CHUNK_SIZE, pBar, test_size=0.2):
+    X_train, y_train = [], []
+    X_val, y_val = [], []
+    X_test, y_test = [], []
+    test_file_ids = []
+
+    i = 0
+    pBar.setMaximum(sum(1 for item in dataset_path.iterdir() if item.is_dir()))
+
+    for label in os.listdir(dataset_path):
+        folder_path = os.path.join(dataset_path, label)
+
+        if not os.path.isdir(folder_path):
+            continue
+
+        files = [f for f in os.listdir(folder_path) if f.endswith(".wav")]
+
+        if MAX_FILES_PER_CLASS:
+            files = files[:MAX_FILES_PER_CLASS]
+
+        train_files, temp_files = train_test_split(files, test_size=0.3, random_state=42)
+        val_files, test_files = train_test_split(temp_files, test_size=0.5, random_state=42)
+
+        print(f"\nClass: {label}")
+        print(f"Train files: {len(train_files)}, Val files: {len(val_files)}, Test files: {len(test_files)}")
+
+        """check for simmilar files in several sets"""
+        checkIntersections(train_files, val_files, test_files)
+
+        for file in tqdm(train_files, desc=f"{label} train"):
+            full_path = os.path.join(folder_path, file)
+
+            try:
+                # chunks = process_file(full_path)
+                chunks = process_file_multifeature(full_path, SAMPLE_RATE, CHUNK_SIZE)
+                # chunks = process_file_spectrogram(full_path, augment=True)
+
+                for chunk in chunks:
+                    X_train.append(chunk)
+                    y_train.append(label)
+
+            except Exception as e:
+                print(f"Error processing {file}: {e}")
+
+        for file in tqdm(val_files, desc=f"{label} val"):
+            full_path = os.path.join(folder_path, file)
+
+            try:
+                # chunks = process_file(full_path)
+                chunks = process_file_multifeature(full_path, SAMPLE_RATE, CHUNK_SIZE)
+                # chunks = process_file_spectrogram(full_path, augment=False)
+
+                for chunk in chunks:
+                    X_val.append(chunk)
+                    y_val.append(label)
+
+            except Exception as e:
+                print(f"Error processing {file}: {e}")
+
+        for file in tqdm(test_files, desc=f"{label} test"):
+            full_path = os.path.join(folder_path, file)
+
+            try:
+                # chunks = process_file(full_path)
+                chunks = process_file_multifeature(full_path, SAMPLE_RATE, CHUNK_SIZE)
+                # chunks = process_file_spectrogram(full_path, augment=False)
+
+                for chunk in chunks:
+                    X_test.append(chunk)
+                    y_test.append(label)
+
+                    test_file_ids.append(file)
+
+            except Exception as e:
+                print(f"Error processing {file}: {e}")
+
+        pBar.setValue(i + 1)
+
+    return (
+        np.array(X_train), np.array(y_train),
+        np.array(X_val), np.array(y_val),
+        np.array(X_test), np.array(y_test),
+        np.array(test_file_ids)
+    )
+
+def checkIntersections(train_files, val_files, test_files):
+    common_files = list(set(train_files).intersection(val_files, test_files))
+
+    print("Files in all 3 lists:", common_files)
+
+    print(
+        "Train-Val:",
+        len(set(train_files) & set(val_files))
+    )
+
+    print(
+        "Train-Test:",
+        len(set(train_files) & set(test_files))
+    )
+
+    print(
+        "Val-Test:",
+        len(set(val_files) & set(test_files))
+    )
 
 # Util --------------------------------------------------------------------------------------------------------------
 

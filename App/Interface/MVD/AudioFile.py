@@ -209,6 +209,11 @@ class FileProcessionWindow(QMainWindow):
         layout = QGridLayout()
 
         self.folderPathLabelNpy = QLineEdit(self)
+
+        self.datatypeComboBox = QComboBox()
+        self.datatypeComboBox.addItems(['Базовий набір даних (Амп/Фаза)',
+                                        'Комплексний набір даних (11 хар-к), Готовий набір даних'])
+
         self.folderPathLabelNpy.setPlaceholderText("Шлях до папки з звуковими файлами...")
         self.folderPathLabelNpy.setAlignment(QtCore.Qt.AlignLeft)
         self.folderPathLabelNpy.setReadOnly(True)
@@ -246,21 +251,22 @@ class FileProcessionWindow(QMainWindow):
                                          "}")
 
         layout.addWidget(QPushButton("Інформація по процесу", clicked=self.showNpyWindowInfo), 0, 0, 1, 3)
-        layout.addWidget(QPushButton("Обрати папку", clicked=self.getFilesFolderPathNpy), 1, 0)
-        layout.addWidget(self.folderPathLabelNpy, 1, 1, 1, 2)
+        layout.addWidget(self.datatypeComboBox, 1, 0, 1, 3 )
+        layout.addWidget(QPushButton("Обрати папку", clicked=self.getFilesFolderPathNpy), 2, 0)
+        layout.addWidget(self.folderPathLabelNpy, 2, 1, 1, 2)
 
-        layout.addWidget(self.rangeInfoNpy, 2, 0, 1, 3)
-        layout.addWidget(QPushButton('Ввести', clicked=self.enterRangeNpy), 3, 0)
-        layout.addWidget(self.rangeStartTextboxNpy, 3, 1)
-        layout.addWidget(self.rangeEndTextboxNpy, 3, 2)
+        layout.addWidget(self.rangeInfoNpy, 3, 0, 1, 3)
+        layout.addWidget(QPushButton('Ввести', clicked=self.enterRangeNpy), 4, 0)
+        layout.addWidget(self.rangeStartTextboxNpy, 4, 1)
+        layout.addWidget(self.rangeEndTextboxNpy, 4, 2)
 
-        layout.addWidget(self.allyInfoNpy, 4, 0, 1, 3)
-        layout.addWidget(QPushButton('Ввести', clicked=self.enterPointerNpy), 5, 0)
-        layout.addWidget(self.allyTextboxNpy, 5, 1, 1, 2)
+        layout.addWidget(self.allyInfoNpy, 5, 0, 1, 3)
+        layout.addWidget(QPushButton('Ввести', clicked=self.enterPointerNpy), 6, 0)
+        layout.addWidget(self.allyTextboxNpy, 6, 1, 1, 2)
 
         # layout.addWidget(QPushButton("Перетворити", clicked=self.longRunProcessFiles), 6, 0, 1, 3)
-        layout.addWidget(QPushButton("Перетворити", clicked=self.processAudioFilesNpy), 6, 0, 1, 3)
-        layout.addWidget(self.numericalPBarNpy, 7, 0, 1, 3)
+        layout.addWidget(QPushButton("Перетворити", clicked=self.processAudioFilesNpy), 7, 0, 1, 3)
+        layout.addWidget(self.numericalPBarNpy, 8, 0, 1, 3)
 
         audioTabNpy.setLayout(layout)
         return audioTabNpy
@@ -637,6 +643,7 @@ class FileProcessionWindow(QMainWindow):
     def processAudioFilesNpy(self):
         self.consoleOutput.insertPlainText("Іде обробка... \n")
 
+        datasetType = self.datatypeComboBox.currentIndex()
         filePath = QFileDialog.getExistingDirectory(self, "Оберіть папку для збереження результату")
 
         if filePath:
@@ -652,17 +659,31 @@ class FileProcessionWindow(QMainWindow):
 
                 rangeStart, rangeEnd = self.rangeLabelNpy.text().split(" / ")
 
-                Processing.processFilesNpy(self.folderPathLabelNpy.text(), filesList, int(self.allyLabelNpy.text()),
-                                           int(rangeStart), int(rangeEnd), filePath,
-                                           self.numericalPBar, self.consoleOutput)
+                if datasetType == 0:
+                    Processing.processFilesNpy(self.folderPathLabelNpy.text(), filesList, int(self.allyLabelNpy.text()),
+                                               int(rangeStart), int(rangeEnd), filePath,
+                                               self.numericalPBar, self.consoleOutput)
 
-                self.consoleOutput.insertPlainText("Файли оброблено! \n")
+                    self.consoleOutput.insertPlainText("Файли оброблено! \n")
 
-                self.folderPathLabelNpy.setText("Шлях до папки з звуковими файлами...")
-                self.rangeLabelNpy.setText("--------")
-                self.allyLabelNpy.setText("--------")
+                    self.folderPathLabelNpy.setText("Шлях до папки з звуковими файлами...")
+                    self.rangeLabelNpy.setText("--------")
+                    self.allyLabelNpy.setText("--------")
 
-                self.getOutherTree(filePath)
+                    self.getOutherTree(filePath)
+                else:
+                    Processing.processFilesNpyComplex(self.folderPathLabelNpy.text(), filesList, int(self.allyLabelNpy.text()),
+                                                      int(rangeStart), int(rangeEnd), filePath,
+                                                      self.numericalPBar, self.consoleOutput)
+
+                    self.consoleOutput.insertPlainText("Файли оброблено! \n")
+
+                    self.folderPathLabelNpy.setText("Шлях до папки з звуковими файлами...")
+                    self.rangeLabelNpy.setText("--------")
+                    self.allyLabelNpy.setText("--------")
+
+                    self.getOutherTree(filePath)
+                    print("type 2")
             else:
                 self.consoleOutput.insertPlainText("Некоректний формат файлів для обробки! \n")
         else:

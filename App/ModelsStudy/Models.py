@@ -5,6 +5,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import traceback, sys, os
 import numpy
 from sklearn.preprocessing import StandardScaler
+from sklearn.utils.class_weight import compute_class_weight
+from sklearn.preprocessing import LabelEncoder
 from keras.utils import to_categorical
 
 import tensorflow as tf
@@ -16,6 +18,7 @@ from tensorflow import keras
 from keras import layers
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, LSTM
+from keras import callbacks
 # Tensorboard
 # python -m tensorboard.main --logdir=ModelsResults/
 from keras.callbacks import TensorBoard
@@ -98,6 +101,79 @@ def getDataTestParams(testDataFeatures, testDataLabels):
     print("TESTING=============================")
     print(testFeatures)
     print(testLabels)
+
+def getDataParams(trainDataFeatures, trainDataLabels, testDataFeatures, testDataLabels):
+
+    global trainFeatures, testFeatures, trainLabels, testLabels
+
+    trainFeatures = trainDataFeatures
+    trainLabels = trainDataLabels
+    testFeatures = testDataFeatures
+    testLabels = testDataLabels
+def getAndPrepareNpyBirdsData(trainFeatures, evaluateFeatures, testFeatures, trainLables, evaluateLabels, testLables, testIds):
+    global X_train, X_val, X_test, y_train, y_val, y_test, test_file_ids
+
+    X_train = trainFeatures
+    X_val = evaluateFeatures
+    X_test = testFeatures
+    y_train = trainLables
+    y_val = evaluateLabels
+    y_test = testLables
+    test_file_ids = testIds
+
+    global le
+    le = LabelEncoder()
+
+    y_train = le.fit_transform(y_train)
+    y_val = le.transform(y_val)
+    y_test = le.transform(y_test)
+
+    print("X_train shape:", X_train.shape)
+    print("X_val shape:", X_val.shape)
+    print("X_test shape:", X_test.shape)
+
+    from collections import Counter
+    print(Counter(y_train))
+    print(Counter(y_val))
+    print(Counter(y_test))
+
+    # Global Normalization
+    n_features = X_train.shape[-1]
+
+    scalers = []
+
+    for i in range(n_features):
+        scaler = StandardScaler()
+
+        scaler.fit(
+            X_train[:, :, i].reshape(-1, 1)
+        )
+
+        X_train[:, :, i] = scaler.transform(
+            X_train[:, :, i].reshape(-1, 1)
+        ).reshape(X_train.shape[0], X_train.shape[1])
+
+        X_val[:, :, i] = scaler.transform(
+            X_val[:, :, i].reshape(-1, 1)
+        ).reshape(X_val.shape[0], X_val.shape[1])
+
+        X_test[:, :, i] = scaler.transform(
+            X_test[:, :, i].reshape(-1, 1)
+        ).reshape(X_test.shape[0], X_test.shape[1])
+
+        scalers.append(scaler)
+
+    classes = numpy.unique(y_train)
+
+    weights = compute_class_weight(
+        class_weight='balanced',
+        classes=classes,
+        y=y_train
+    )
+
+    class_weights = dict(
+        zip(numpy.unique(y_train), weights)
+    )
 
 
 # Signals class
@@ -879,6 +955,120 @@ def studySecondTypeClusteringModels():
             QApplication.processEvents()
 
         return countSet, resultSet
+
+@QtCore.pyqtSlot()
+def studyBirdsModelsFirstType():
+
+    if checkStudyData == False:
+        consoleOutput.insertPlainText(
+            "Відсутній один, або декілька необхідних для навчання наборів даних... \n")
+    else:
+        modelType = "Birds (Combined, type 1)"
+        tensorboard = TensorBoard(log_dir=f'TensorboardResults/{modelType}-{int(time.time())}')
+        # tensorboard = TensorBoard(log_dir=f'D:/PythonProjects/MagRobota/ModelsResults/{modelType}-{int(time.time())}')
+
+        resultSet = []
+        countSet = []
+
+        # Data Preparation
+        classes = numpy.unique(y_train)
+
+        weights = compute_class_weight(
+            class_weight='balanced',
+            classes=classes,
+            y=y_train
+        )
+
+        class_weights = dict(
+            zip(numpy.unique(y_train), weights)
+        )
+
+        infoSignal.progress.emit(f'Model: {modelType}, training started!')
+
+        # Model params
+        first_layer, second_layer, third_layer = 50, 50, 50
+        cycles = 5
+        for i in range(cycles):
+            # Layers
+            model = Sequential([
+                layers.Conv1D(32, kernel_size=5, activation='relu', padding='same',
+                       input_shape=(X_train.shape[1], X_train.shape[2])),
+                keras.layers.BatchNormalization(),
+                layers.MaxPooling1D(2),
+                layers.Conv1D(64, kernel_size=3, activation='relu', padding='same'),
+                keras.layers.BatchNormalization(),
+                layers.MaxPooling1D(2),
+                layers.Conv1D(128, kernel_size=3, activation='relu', padding='same'),
+                keras.layers.BatchNormalization(),
+                keras.layers.GlobalAveragePooling1D(),
+                Dense(128, activation='relu'),
+                keras.layers.Dropout(0.4),
+                Dense(len(numpy.unique(y_train)), activation='softmax')
+            ])
+
+            # Model compile
+            model.compile(
+                optimizer='Adam',
+                loss='sparse_categorical_crossentropy',
+                metrics=['accuracy']
+            )
+
+            model.summary()
+
+            # Model study
+            early_stop = callbacks.EarlyStopping(
+                monitor='val_loss',
+                patience=5,
+                restore_best_weights=True
+            )
+
+            model.fit(
+                X_train, y_train,
+                validation_data=(X_val, y_val),
+                epochs=50,
+                batch_size=32,
+                shuffle=True,
+                callbacks=[early_stop],
+                class_weight=class_weights
+            )
+            QApplication.processEvents()
+
+            # Model Prediction
+            le = LabelEncoder()
+            test_loss, test_acc = model.evaluate(X_test, y_test, verbose=1)
+
+            print(f"Test loss: {test_loss:.4f}")
+            print(f"Test accuracy: {test_acc:.4f}")
+
+            y_pred_probs = model.predict(X_test)
+            y_pred = y_pred_probs.argmax(axis=1)
+
+            predNumber = 20
+            randomPred = show_random_predictions(X_test, y_test, model, le, n=predNumber)
+
+            count = f"Matches: {randomPred} of {predNumber} is true. Guess Accuracy: {test_acc}"
+            print(count)
+
+            # All models saving
+
+            if test_acc >= 0.6 and randomPred >= 5:
+                path = "%s/%s, %f" % (savePath, modelType, test_acc)
+                modelName = model.config["type"] + str(f"_{test_acc:.5f}")
+                model.save(f"{path}/{modelName}/birds_model.keras")
+                print('Model Saved!')
+
+            resultSet.append(test_acc)
+            countSet.append(randomPred)
+
+            # Model params change
+            first_layer += 10
+            second_layer += 5
+            third_layer += 3
+
+            # Ui
+            QApplication.processEvents()
+
+        return countSet, resultSet
         # 5 models
 
 # Model manipulation ------------------------------------------------------------------------------------------------
@@ -1306,6 +1496,32 @@ def checkTestData():
     else:
         print("False")
         return False
+
+def show_random_predictions(X, y_true, model, label_encoder, n):
+    indices = numpy.random.choice(len(X), n, replace=False)
+    res = 0
+
+    for i, idx in enumerate(indices):
+        sample = X[idx:idx + 1]
+
+        pred_probs = model.predict(sample, verbose=0)
+        pred_class = numpy.argmax(pred_probs)
+
+        true_class = y_true[idx]
+
+        pred_label = label_encoder.inverse_transform([pred_class])[0]
+        true_label = label_encoder.inverse_transform([true_class])[0]
+
+        if true_label == pred_label:
+            res += 1
+
+        print(f"\nSample {i + 1}")
+        print(f"True: {true_label}")
+        print(f"Pred: {pred_label}")
+        print(f"Confidence: {numpy.max(pred_probs):.3f}")
+
+    print(f"Result: {res}/{n}")
+    return res
 
 
 

@@ -128,6 +128,22 @@ class StudyDataWindow(QMainWindow):
         self.npyYDataLabel.setText("Шлях до Y файлу: ---")
         self.npyYDataLabel.setAlignment(QtCore.Qt.AlignCenter)
 
+        self.altLabel = QLabel()
+        self.altLabel.setText("--- Альтьернативно (комбінований набір для птахів) ---")
+        self.altLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.npyCombinedDataLabel = QLabel()
+        self.npyCombinedDataLabel.setText("Шлях до файлу: ---")
+        self.npyCombinedDataLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.npyYDataLabel = QLabel()
+        self.npyYDataLabel.setText("Шлях до Y файлу: ---")
+        self.npyYDataLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.div = QLabel()
+        self.div.setText("----------")
+        self.div.setAlignment(QtCore.Qt.AlignCenter)
+
         self.excelTable = QTableWidget()
 
         self.layout.addWidget(self.infoLabel)
@@ -135,6 +151,10 @@ class StudyDataWindow(QMainWindow):
         self.layout.addWidget(self.npyXDataLabel)
         self.layout.addWidget(QPushButton("Обрати файл з вказівниками (Y)", self, clicked=self.getNpyYFilePath))
         self.layout.addWidget(self.npyYDataLabel)
+        self.layout.addWidget(self.altLabel)
+        self.layout.addWidget(self.npyCombinedDataLabel)
+        self.layout.addWidget(QPushButton("Вказати шлях до файлів", self, clicked=self.getNpyCombinedFilePath))
+        self.layout.addWidget(self.div)
         self.layout.addWidget(QPushButton("Завантажити дані", self, clicked=self.loadNpyData))
         self.layout.addWidget(QPushButton("Переглянути дані в .Npy файлі", self, clicked=self.previewNpyDataset))
 
@@ -281,31 +301,47 @@ class StudyDataWindow(QMainWindow):
 
     def loadNpyData(self):
 
-        self.X = np.load(self.npyXDataLabel.text())
-        self.y = np.load(self.npyYDataLabel.text())
+        if self.npyCombinedDataLabel.text() != "Шлях до файлу: ---":
+            self.X_train = numpy.load(f"{self.npyCombinedDataLabel.text()}/X_train.npy")
+            self.X_val = numpy.load(f"{self.npyCombinedDataLabel.text()}/X_val.npy")
+            self.X_test = numpy.load(f"{self.npyCombinedDataLabel.text()}/X_test.npy")
+            self.y_train = numpy.load(f"{self.npyCombinedDataLabel.text()}/y_train.npy")
+            self.y_val = numpy.load(f"{self.npyCombinedDataLabel.text()}/y_val.npy")
+            self.y_test = numpy.load(f"{self.npyCombinedDataLabel.text()}/y_test.npy")
+            self.test_file_ids = numpy.load(f"{self.npyCombinedDataLabel.text()}/test_file_ids.npy")
 
-        print("Loaded:")
-        print(self.X.shape)
-        print(self.y.shape)
+            Models.getAndPrepareNpyBirdsData(self.X_train, self.X_val, self.X_test, self.y_train, self.y_val, self.y_test, self.test_file_ids)
+            self.consoleOutput.insertPlainText("Дані завантажено... \n")
+        else:
+            self.X = np.load(self.npyXDataLabel.text())
+            self.y = np.load(self.npyYDataLabel.text())
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            self.X,
-            self.y,
-            test_size=0.2,
-            random_state=42,
-            shuffle=True,
-            stratify=self.y
-        )
+            print("Loaded:")
+            print(self.X.shape)
+            print(self.y.shape)
 
-        print(X_train)
-        print(X_test)
-        print(y_train)
-        print(y_test)
+            X_train, X_test, y_train, y_test = train_test_split(
+                self.X,
+                self.y,
+                test_size=0.2,
+                random_state=42,
+                shuffle=True,
+                stratify=self.y
+            )
 
-        self.xTrain = numpy.array(X_train)
-        self.yTrain = numpy.array(y_train)
-        self.xTest = numpy.array(X_test)
-        self.yTest = numpy.array(y_test)
+            print(X_train)
+            print(X_test)
+            print(y_train)
+            print(y_test)
+
+            self.xTrain = numpy.array(X_train)
+            self.yTrain = numpy.array(y_train)
+            self.xTest = numpy.array(X_test)
+            self.yTest = numpy.array(y_test)
+
+            Models.getDataParams(self.xTrain, self.yTrain, self.xTest, self.yTest)
+            self.consoleOutput.insertPlainText("Дані завантажено... \n")
+
 
     def loadSheet(self, sheetName):
 
@@ -593,14 +629,21 @@ class StudyDataWindow(QMainWindow):
         if file:
             self.npyXDataLabel.setText(file)
         else:
-            self.dataLabel.setText("Оберіть файл!")
+            self.npyXDataLabel.setText("Шлях до X файлу: ---")
     def getNpyYFilePath(self):
         file, check = QFileDialog.getOpenFileName(None, "Оберіть файл", "", "NumPy Files (*.npy);")
         # return files
         if file:
             self.npyYDataLabel.setText(file)
         else:
-            self.dataLabel.setText("Оберіть файл!")
+            self.npyYDataLabel.setText("Шлях до Y файлу: ---")
+    def getNpyCombinedFilePath(self):
+        path = QFileDialog.getExistingDirectory(self, "Оберіть папку")
+        # return files
+        if path:
+            self.npyCombinedDataLabel.setText(path)
+        else:
+            self.npyCombinedDataLabel.setText("Шлях до файлу: ---")
 
     """
         Save Data Set: choose what to save, check if arrays are full, send data to models class

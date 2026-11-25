@@ -143,7 +143,8 @@ class AISynthesisWindow(QMainWindow):
         self.modelSetComboBox = QComboBox()
         self.modelSetComboBox.addItems(['Перший алгоритм синтезу',
                                         'Другий алгоритм синтезу',
-                                        'Алгоритм з кластериацією'])
+                                        'Алгоритм з кластериацією',
+                                        'Складні моделі для птахів'])
 
         self.modelPBar = QProgressBar(self)
         self.modelPBar.setAlignment(QtCore.Qt.AlignCenter)
@@ -541,6 +542,20 @@ class AISynthesisWindow(QMainWindow):
             elif modelsSet == 2:
                 self.consoleOutput.insertPlainText("Моделі із застосуванням кластериації. Іде обробка... \n")
                 for task in (Models.studyFirstTypeClusteringModels, Models.studySecondTypeClusteringModels):
+                    worker = Models.Worker(task)
+                    # Progress output to console
+                    Models.infoSignal.progress.connect(self.print_progress)
+                    Models.callbackSignal.callback.connect(self.print_progress)
+                    # Models study results
+                    worker.signals.result.connect(self.get_models_result)
+                    # Final models sorting
+                    worker.signals.finished.connect(self.thread_complete)
+
+                    thread_pool.start(worker)
+
+            elif modelsSet == 3:
+                self.consoleOutput.insertPlainText("Моделі для класифікації звуків птахів. Іде обробка... \n")
+                for task in (Models.studyBirdsModelsFirstType, Models.studyBirdsModelsFirstType):
                     worker = Models.Worker(task)
                     # Progress output to console
                     Models.infoSignal.progress.connect(self.print_progress)
